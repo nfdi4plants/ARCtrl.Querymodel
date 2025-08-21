@@ -36,7 +36,7 @@ module ArcInvestigationExtensions =
                     for s in this.Studies do yield! s.Tables
                     for a in this.Assays do yield! a.Tables
                 }
-                |> dedupeName (fun (a : ArcTable) -> a.Name) (fun v (a : ArcTable) -> ArcTable(v,a.Headers,a.Values))
+                |> dedupeName (fun (a : ArcTable) -> a.Name) (fun v (a : ArcTable) -> ArcTable.fromArcTableValues(v,a.Headers,a.Values))
                 |> ResizeArray
                 |> ArcTables
 
