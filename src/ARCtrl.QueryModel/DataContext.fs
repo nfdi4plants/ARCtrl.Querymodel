@@ -27,6 +27,12 @@ module DataContext =
     
     let dataContexts : ResizeArray<DataContext> = ResizeArray()
 
+    let selectorIsIncluded (outer : DataContext) (inner : DataContext) =
+        match outer.Selector, inner.Selector with
+        | Some o, Some i when o = i -> true
+        | Some o, Some i -> FragmentSelector.CSV.isIncluded o i
+        | _ -> false
+
     let tryGetDataContextByName (name : string) =
         if name.Contains("#") then 
             let [|path;selector|] = name.Split('#')
@@ -34,11 +40,11 @@ module DataContext =
             |> Seq.tryFind (fun n -> 
                 if n.FilePath.IsNone || n.Selector.IsNone then false
                 else 
-                    n.FilePath.Value = path && n.Selector.Value = selector
+                    n.FilePath.Value = path && (n.Selector.Value = selector || FragmentSelector.CSV.isIncluded n.Selector.Value selector)
                 )
         else
             dataContexts
-            |> Seq.tryFind (fun n -> n.NameText = Some name)
+            |> Seq.tryFind (fun n -> n.NameText = name)
 
 
     let getAbsolutePath (basePath : string) (dc : DataContext) =
@@ -49,6 +55,11 @@ module DataContext =
 
 [<AutoOpen>]
 module ARCExtensions = 
+
+    type DataContext with
+
+        member this.ExplicationEquals (explication : OntologyAnnotation) =
+            this.Explication.IsSome && this.Explication.Value.Equals explication
 
     type ARC with
 

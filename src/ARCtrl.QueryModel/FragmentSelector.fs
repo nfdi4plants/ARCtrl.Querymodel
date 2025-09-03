@@ -100,13 +100,24 @@ type CSV =
             CellRange ((startRow, startColumn), (endRow, endColumn))
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv." s
 
-module FragmentSelector = 
+    static member getZeroBasedColumnIndexFromString(s : string) =
+        match s with
+        | Regex columnRegex m -> 
+            let column = m.Value |> int
+            column - 1
+        | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv column." s
 
-   let isIncluded (outer : CSV) (inner : int) (column : int) =
-        match selector with
-        | Row r -> r = row
-        | Column c -> c = column
-        | Cell (r,c) -> r = row && c = column
-        | RowRange (startRow, endRow) -> row >= startRow && row <= endRow
-        | ColumnRange (startCol, endCol) -> column >= startCol && column <= endCol
-        | CellRange ((startRow, startCol), (endRow, endCol)) -> row >= startRow && row <= endRow && column >= startCol && column <= endCol 
+    static member getZeroBasedRowIndexFromString(s : string) =
+        match s with
+        | Regex rowRegex m -> 
+            let row = m.Value |> int
+            row - 1
+        | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv row." s
+
+    static member getZeroBasedCellIndexFromString(s : string) =
+        match s with
+        | Regex cellRegex m -> 
+            let row = (m.Groups.["row"].Value |> int) - 1
+            let column = (m.Groups.["column"].Value |> int) - 1
+            (row, column)
+        | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv cell." s

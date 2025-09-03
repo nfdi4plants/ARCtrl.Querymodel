@@ -711,6 +711,28 @@ module ArcTables =
     /// One Node of an ISA Process Sequence (Source, Sample, Data)
     type QNode(name : string, ioType : IOType, ?parentProcessSequence : ArcTables) =
     
+        member this.DataContext = 
+            if ioType.isData then 
+                match DataContext.tryGetDataContextByName name with
+                | Some dc -> 
+                    DataContext(?id = dc.ID, name = name, ?format = dc.Format, ?selectorFormat = dc.SelectorFormat, ?explication = dc.Explication, ?unit = dc.Unit, ?objectType = dc.ObjectType, ?label = dc.Label, ?description = dc.Description, ?generatedBy = dc.GeneratedBy, comments = dc.Comments)
+                    |> Some
+                | None -> Some (DataContext(name = name))
+            else 
+                None
+
+        member this.FilePath = 
+            if ioType.isData then 
+                this.DataContext.Value.FilePath.Value
+            else 
+                ""
+
+        member this.Selector = 
+            if ioType.isData then 
+                this.DataContext.Value.Selector
+            else 
+                None
+
         /// Returns the process sequence in which the node appears
         member this.ParentProcessSequence = parentProcessSequence |> Option.defaultValue (ArcTables(ResizeArray []))
 
