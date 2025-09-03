@@ -6,14 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="FragmentSelector.fs" />
-    <Compile Include="DataContext.fs" />
     <Compile Include="CSV.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ARCtrl" Version="3.0.0-beta.3" />
     <PackageReference Include="Deedle" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ARCtrl.QueryModel\ARCtrl.QueryModel.fsproj" />
   </ItemGroup>
 
 </Project>

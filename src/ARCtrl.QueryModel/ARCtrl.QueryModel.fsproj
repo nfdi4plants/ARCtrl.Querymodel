@@ -8,6 +8,8 @@
   <ItemGroup>
     <Compile Include="ResizeArray.fs" />
     <Compile Include="OntologyAnnotation.fs" />
+    <Compile Include="FragmentSelector.fs" />
+    <Compile Include="DataContext.fs" />
     <Compile Include="Comment.fs" />
     <Compile Include="Errors.fs" />
     <Compile Include="Person.fs" />

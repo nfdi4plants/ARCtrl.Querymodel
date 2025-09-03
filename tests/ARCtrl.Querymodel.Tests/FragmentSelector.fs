@@ -2,7 +2,7 @@
 
 open Expecto
 open ARCtrl
-open ARCtrl.Fragcess
+open ARCtrl.QueryModel
 let testArcPath = __SOURCE_DIRECTORY__ + @"\TestObjects\TestArc"
 let testArc = ARC.load(testArcPath)
 

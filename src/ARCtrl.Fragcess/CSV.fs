@@ -2,6 +2,7 @@
 
 open Deedle
 open ARCtrl
+open ARCtrl.QueryModel
 open FragmentSelector
 
 module Frame = 
