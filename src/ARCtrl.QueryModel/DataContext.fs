@@ -27,10 +27,13 @@ module DataContext =
     
     let dataContexts : ResizeArray<DataContext> = ResizeArray()
 
+    /// Check if the selector of the inner DataContext is included in the selector of the outer DataContext
+    ///
+    /// E.g. outer selector "row=1-5" includes inner selector "row=3"
     let selectorIsIncluded (outer : DataContext) (inner : DataContext) =
         match outer.Selector, inner.Selector with
         | Some o, Some i when o = i -> true
-        | Some o, Some i -> FragmentSelector.CSV.isIncluded o i
+        | Some o, Some i -> FragmentSelector.CSV.isIncludedString o i
         | _ -> false
 
     let tryGetDataContextByName (name : string) =
@@ -40,7 +43,7 @@ module DataContext =
             |> Seq.tryFind (fun n -> 
                 if n.FilePath.IsNone || n.Selector.IsNone then false
                 else 
-                    n.FilePath.Value = path && (n.Selector.Value = selector || FragmentSelector.CSV.isIncluded n.Selector.Value selector)
+                    n.FilePath.Value = path && (n.Selector.Value = selector || FragmentSelector.CSV.isIncludedString n.Selector.Value selector)
                 )
         else
             dataContexts

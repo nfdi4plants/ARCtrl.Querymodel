@@ -31,6 +31,9 @@ type CSV =
     | ColumnRange of int * int
     | CellRange of (int * int) * (int * int)
 
+    /// Check if this selector is included in the outer selector
+    ///
+    /// E.g. Row 3 is included in RowRange (1,5)
     member this.IsIncludedIn (outer : CSV) =
         match outer, this with
         | _ when outer = this -> true
@@ -39,11 +42,17 @@ type CSV =
         | CellRange ((startRow1, startCol1), (endRow1, endCol1)), Cell (r2,c2) -> r2 >= startRow1 && r2 <= endRow1 && c2 >= startCol1 && c2 <= endCol1 
         | _ -> false
 
-    static member isIncluded (outer : string) (inner : string) =
+    /// Check if the inner selector (as string) is included in the outer selector (as string)
+    ///
+    /// E.g. "row=3" is included in "row=1-5"
+    static member isIncludedString (outer : string) (inner : string) =
         let outerSelector : CSV  = CSV.fromString outer
         let innerSelector : CSV = CSV.fromString inner
         innerSelector.IsIncludedIn outerSelector
 
+    /// Parse a CSV fragment selector from string (1-based indexing)
+    ///
+    /// https://datatracker.ietf.org/doc/html/rfc7111
     static member fromString(s : string) =
         match s with
         | Regex rowRegex m -> 
@@ -72,6 +81,9 @@ type CSV =
             CellRange ((startRow, startColumn), (endRow, endColumn))
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv." s
         
+    /// Parse a CSV fragment selector from string (0-based indexing)
+    ///
+    /// https://datatracker.ietf.org/doc/html/rfc7111
     static member fromStringZeroBased(s : string) = 
         match s with
         | Regex rowRegex m -> 
@@ -100,6 +112,7 @@ type CSV =
             CellRange ((startRow, startColumn), (endRow, endColumn))
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv." s
 
+    /// Get the zero-based column index from a CSV fragment selector string. If it is not a column selector, an exception is raised
     static member getZeroBasedColumnIndexFromString(s : string) =
         match s with
         | Regex columnRegex m -> 
@@ -107,6 +120,7 @@ type CSV =
             column - 1
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv column." s
 
+    /// Get the zero-based row index from a CSV fragment selector string. If it is not a row selector, an exception is raised
     static member getZeroBasedRowIndexFromString(s : string) =
         match s with
         | Regex rowRegex m -> 
@@ -114,6 +128,7 @@ type CSV =
             row - 1
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv row." s
 
+    /// Get the zero-based cell index from a CSV fragment selector string. If it is not a cell selector, an exception is raised
     static member getZeroBasedCellIndexFromString(s : string) =
         match s with
         | Regex cellRegex m -> 
