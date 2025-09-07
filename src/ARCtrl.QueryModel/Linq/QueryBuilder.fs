@@ -326,8 +326,8 @@ type ISAQueryBuilder () =
         this.Where(
             source,
             (fun (v : ArcTable) ->                 
-                v.GetInputColumn().Cells |> Array.exists ioTypeIsData
-                && (v.GetOutputColumn().Cells |> Array.exists ioTypeIsData)
+                v.GetInputColumn().Cells |> Seq.exists ioTypeIsData
+                && (v.GetOutputColumn().Cells |> Seq.exists ioTypeIsData)
             )
         )
 

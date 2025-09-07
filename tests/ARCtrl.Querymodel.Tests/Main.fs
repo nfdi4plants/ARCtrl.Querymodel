@@ -5,6 +5,7 @@ open Expecto
 
 let all = testSequenced <| testList "All" [
         TestARC.Tests.main     
+        FragmentSelector.Tests.main
     ]
 
 [<EntryPoint>]

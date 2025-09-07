@@ -8,6 +8,8 @@
   <ItemGroup>
     <Compile Include="ResizeArray.fs" />
     <Compile Include="OntologyAnnotation.fs" />
+    <Compile Include="FragmentSelector.fs" />
+    <Compile Include="DataContext.fs" />
     <Compile Include="Comment.fs" />
     <Compile Include="Errors.fs" />
     <Compile Include="Person.fs" />
@@ -27,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ARCtrl" Version="2.3.1" />
+    <PackageReference Include="ARCtrl" Version="3.0.0-beta.3" />
     <!--<PackageReference Include="OBO.NET" Version="0.4.2" />-->
     <PackageReference Include="Swate.Api" Version="0.2.0" />
   </ItemGroup>
