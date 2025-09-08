@@ -1,3 +1,15 @@
+### 3.0.0+3487749 (Released 2025-9-8)
+* Additions:
+    * [[#efc808c](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/efc808c858ecce76beb8eb8ea5fe531450fb6353)] upate ARCtrl dependency to 3.0
+    * [[#096755e](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/096755e80afce5b01eb9b47a8ef1beb09fa76dca)] add first version of fragment access
+    * [[#a3e5d3c](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/a3e5d3c71cc8438e6039a610d365141a5c0ed424)] some additional helper functions to retreive values from specific studies and assays
+    * [[#6f1af0f](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/6f1af0f367710addd7351d39d7b6c4d0867c16a8)] start working extended DataContext inclusion
+    * [[#d82e591](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/d82e59172de08152d1b4165b298d004376dbb6c0)] add some additional datacontext related helper functions
+    * [[#cce6082](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/cce6082ab062045227fd16701d5cb701c0b67111)] add additional unit tests for CSV Fragment Selector parsing
+    * [[#b968e6f](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/b968e6ff8ef070e3af08006fef67edeffc659b6c)] Add .zenodo.json for metadata and contributors
+* Bugfixes:
+    * [[#36baabd](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/36baabd7bc261afbd112f519da3697839e64cd54)] Fix JSON formatting in .zenodo.json
+
 ### 2.1.0+5fad60b (Released 2024-12-20)
 * Deletions:
     * [[#240e99b](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/240e99bfc80dc5beaf280e5df277db59125c02e6)] remove deprecated ARCtrl.NET project and rename to ARCtrl.Querymodel

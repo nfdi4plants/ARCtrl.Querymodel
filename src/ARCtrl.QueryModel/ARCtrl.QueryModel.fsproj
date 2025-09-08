@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,10 +30,17 @@
     <Compile Include="Linq\Spreadsheet.fs" />
   </ItemGroup>
 
+  
   <ItemGroup>
     <PackageReference Include="ARCtrl" Version="3.0.0-beta.3" />
     <!--<PackageReference Include="OBO.NET" Version="0.4.2" />-->
     <PackageReference Include="Swate.Api" Version="0.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  
+  
 </Project>
