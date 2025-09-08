@@ -1,5 +1,6 @@
-### 3.0.0+3487749 (Released 2025-9-8)
+### 3.0.0+135410b (Released 2025-9-8)
 * Additions:
+    * [[#2ab9d1b](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2ab9d1b48e7708e4524c2e14a0f65deb978ad07d)] Add type field to contributors in .zenodo.json
     * [[#efc808c](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/efc808c858ecce76beb8eb8ea5fe531450fb6353)] upate ARCtrl dependency to 3.0
     * [[#096755e](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/096755e80afce5b01eb9b47a8ef1beb09fa76dca)] add first version of fragment access
     * [[#a3e5d3c](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/a3e5d3c71cc8438e6039a610d365141a5c0ed424)] some additional helper functions to retreive values from specific studies and assays
