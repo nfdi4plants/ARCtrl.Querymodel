@@ -1,0 +1,12 @@
+{
+    "creators": [
+      {"name": "Weil, Heinrich Lukas", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0003-1945-6342"},
+      {"name": "Zimmer, David", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0002-7832-7658"}
+    ],
+    "contributors": [
+      {"name": "Wetzels, Florian", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0002-5526-7138"},
+      {"name": "Schneider, Kevin", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0002-2198-5262"},
+      {"name": "Maus, Oliver", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0002-8241-5300"},
+      {"name": "Ott, Caroline", "affiliation": "RPTU Kaiserslautern-Landau", "orcid": "https://orcid.org/0000-0003-1512-9504"}
+    ]
+}
