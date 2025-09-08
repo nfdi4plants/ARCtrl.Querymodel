@@ -48,6 +48,7 @@ let packPrerelease = BuildTask.create "PackPrerelease" [setPrereleaseTag; clean;
             |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->
                         let msBuildParams =
                             {p.MSBuildParams with 
+                                DisableInternalBinLog = true
                                 Properties = ([
                                     "Version", prereleaseTag
                                     "PackageReleaseNotes",  (release.Notes |> List.map replaceCommitLink  |> String.toLines )
