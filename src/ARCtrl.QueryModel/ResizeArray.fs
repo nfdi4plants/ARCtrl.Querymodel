@@ -1,8 +1,16 @@
-﻿namespace ARCtrl.QueryModel
+﻿namespace ARCtrl.QueryModel.ProcessCore
 
 
 /// Standard Collection operations for resize array
 module ResizeArray =
+
+    let append (a : ResizeArray<_>) (b : ResizeArray<_>) =
+        let c = ResizeArray<_>(a.Count + b.Count)
+        for i in a do
+            c.Add(i)
+        for j in b do
+            c.Add(j)
+        c
 
     let map  f (a : ResizeArray<_>) =
         let b = ResizeArray<_>()

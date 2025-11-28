@@ -1,0 +1,312 @@
+﻿namespace ARCtrl.QueryModel.ProcessCore
+
+open ARCtrl
+open ARCtrl.ROCrate
+open ARCtrl.QueryModel
+
+open System.Collections
+open System.Collections.Generic
+
+/// Contains queryable ISAValues (Parameters, Factors, Characteristics)
+type ValueCollection(values : ResizeArray<LDNode>) =
+    
+    /// Returns the nth Item in the collection
+    member this.Item(i : int)  = values.[i]
+
+    /// Returns an Item in the collection with the given header name
+    member this.Item(category : string) =
+        values 
+        |> Seq.pick (fun v -> if v.Category.NameText = category then Some v else None)
+
+    /// Returns an Item in the collection with the given header category
+    member this.Item(category : OntologyAnnotation) = 
+        values 
+        |> Seq.pick (fun v -> if v.Category = category then Some v else None)
+
+    /// Returns an Item in the collection whichs header category is a child of the given parent category
+    member this.ItemWithParent(parentCategory : OntologyAnnotation) = 
+        values 
+        |> Seq.pick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+
+    /// Returns the nth Item in the collection if it exists, else returns None
+    member this.TryItem(i : int)  = if values.Count > i then Some values.[i] else None
+
+    /// Returns an Item in the collection with the given header name, else returns None
+    member this.TryItem(category : string) = 
+        values
+        |> Seq.tryPick (fun v -> if v.Category.NameText = category then Some v else None)
+
+    /// Returns an Item in the collection with the given header category, else returns None
+    member this.TryItem(category : OntologyAnnotation) = 
+        values 
+        |> Seq.tryPick (fun v -> if v.Category = category then Some v else None)
+
+    /// Returns an Item in the collection whichs header category is a child of the given parent category, else returns None
+    member this.TryItemWithParent(parentCategory : OntologyAnnotation) = 
+        values 
+        |> Seq.tryPick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+
+    /// Get the values as list
+    member this.Values = values
+
+    /// Return a new ValueCollection with only the characteristic values
+    member this.Characteristics(?Name) = 
+        values
+        |> ResizeArray.filter (fun v -> 
+            match Name with 
+            | Some name -> 
+                v.IsCharacteristic && v.NameText = name
+            | None -> 
+                v.IsCharacteristic
+        )
+        |> ValueCollection
+
+    /// Return a new ValueCollection with only the parameter values
+    member this.Parameters(?Name) = 
+        values
+        |> ResizeArray.filter (fun v -> 
+            match Name with 
+            | Some name -> 
+                v.IsParameter && v.NameText = name
+            | None -> 
+                v.IsParameter
+        )
+        |> ValueCollection
+
+    /// Return a new ValueCollection with only the factor values
+    member this.Factors(?Name) = 
+        values
+        |> ResizeArray.filter (fun v -> 
+            match Name with 
+            | Some name -> 
+                v.IsFactor && v.NameText = name
+            | None -> 
+                v.IsFactor
+        )
+        |> ValueCollection
+
+    /// Return a new ValueCollection with only the factor values
+    member this.Components(?Name) = 
+        values
+        |> ResizeArray.filter (fun v -> 
+            match Name with 
+            | Some name -> 
+                v.IsComponent && v.NameText = name
+            | None -> 
+                v.IsComponent
+        )
+        |> ValueCollection
+
+    /// Return a new ValueCollection with only those values, for which the predicate applied on the header return true
+    member this.Filter(predicate : OntologyAnnotation -> bool) = values |> ResizeArray.filter (fun v -> predicate v.Category) |> ValueCollection
+
+    /// Return a new ValueCollection with only those values, whichs header equals the given string
+    member this.WithName(name : string) = 
+        this.Filter (fun v -> v.NameText = name)
+
+    /// Return a new ValueCollection with only those values, whichs header equals the given category
+    member this.WithCategory(category : OntologyAnnotation) = 
+        this.Filter((=) category)
+
+    ///// Return a new ValueCollection with only those values, whichs header equals the given category or an equivalent category
+    /////
+    ///// Equivalency is deduced from XRef relationships in the given Ontology
+    //member this.WithEquivalentCategory(equivalentCategory : OntologyAnnotation, ont : OboOntology) = 
+    //    this.Filter (fun v -> v.IsEquivalentTo(equivalentCategory, ont))
+
+    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its child categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the SwateAPI
+    //member this.WithChildCategory(childCategory : OntologyAnnotation) = 
+    //    this.Filter (fun v -> childCategory.IsChildTermOf(v))
+
+    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its child categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the given Ontology
+    //member this.WithChildCategory(childCategory : OntologyAnnotation, ont : OboOntology) = 
+    //    this.Filter (fun v -> childCategory.IsChildTermOf(v, ont))
+
+    /// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
+    ///
+    /// Equivalency is deduced from isA relationships in the SwateAPI
+    member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
+        this.Filter (fun v -> v.IsChildTermOf(parentCategory))
+
+    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the given Ontology
+    //member this.WithParentCategory(parentCategory : OntologyAnnotation, ont : OboOntology) = 
+    //    this.Filter (fun v -> v.IsChildTermOf(parentCategory,ont))
+
+    /// Returns a new ValueCollection that contains no duplicate entries. 
+    member this.Distinct() =
+        values
+        |> ResizeArray.distinct
+        |> ValueCollection
+
+    /// Returns a new ValueCollection that contains no two entries with the same header Category
+    member this.DistinctHeaderCategories() =
+        values
+        |> ResizeArray.distinctBy (fun v -> v.Category)
+        |> ValueCollection
+
+    /// Returns true, if the ValueCollection contains a values, whichs header equals the given category or its child categories
+    ///
+    /// Equivalency is deduced from isA relationships in the SwateAPI
+    member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
+        values
+        |> Seq.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
+
+    /// Returns true, if the ValueCollection contains a values, whichs header equals the given category
+    member this.Contains(category : OntologyAnnotation) =
+        values
+        |> Seq.exists (fun v -> v.Category = category)
+
+    /// Returns true, if the ValueCollection contains a values, whichs headername equals the given category
+    member this.Contains(name : string) =
+        values
+        |> Seq.exists (fun v -> v.NameText = name)
+
+    interface IEnumerable<LDNode> with
+        member this.GetEnumerator() = (values).GetEnumerator()
+
+    interface IEnumerable with
+        member this.GetEnumerator() = (this :> IEnumerable<LDNode>).GetEnumerator() :> IEnumerator
+
+    static member (@) (ps1 : ValueCollection,ps2 : ValueCollection) = ResizeArray.append ps1.Values ps2.Values |> ValueCollection
+
+[<AutoOpen>]
+module ValueCollectionExtensions =
+
+    type ValueCollection with
+
+        /// Return the number of values in the collection
+        member this.IsEmpty = this.Values.Count = 0
+
+        /// Return the number of values in the collection
+        member this.Length = this.Values.Count
+
+        /// Return first ISAValue in collection
+        member this.First = this.Values.[0]
+
+        /// Return first ISAValue in collection if it exists, else returns None
+        member this.TryFirst = if this.IsEmpty then None else Some this.First
+
+        /// Return first ISAValue in collection
+        member this.Last = this.Values.[this.Length - 1]
+
+/// Contains queryable ISAValues (Parameters, Factors, Characteristics)
+type IOValueCollection(values : KeyValuePair<string*string,LDNode> ResizeArray) =
+
+    /// Returns the nth Item in the collection
+    member this.Item(i : int)  = values.[i]
+
+    member this.Item(category : string) = values |> Seq.pick (fun kv -> if kv.Value.NameText = category then Some kv.Key else None)
+
+    member this.Item(ioKey : string*string) = values |> Seq.pick (fun kv -> if ioKey = kv.Key then Some kv.Value else None)
+
+    member this.Item(category : OntologyAnnotation) = values |> Seq.pick (fun kv -> if kv.Value.Category = category then Some kv.Key else None)
+
+    member this.WithInput(inp : string) = 
+        values 
+        |> ResizeArray.choose (fun kv -> if (fst kv.Key) = inp then Some kv.Value else None)
+        |> ValueCollection
+
+    member this.WithOutput(inp : string) = 
+        values |> ResizeArray.choose (fun kv -> if (snd kv.Key) = inp then Some kv.Value else None)
+        |> ValueCollection
+
+    member this.Values(?Name) = 
+        values 
+        |> ResizeArray.choose (fun kv -> 
+            match Name with
+            | Some name -> 
+                if kv.Value.NameText = name then Some kv.Value
+                else None
+            | None -> Some kv.Value
+        )
+        |> ValueCollection
+
+    member this.Characteristics(?Name) = 
+        values
+        |> ResizeArray.filter (fun kv -> 
+            match Name with 
+            | Some name -> 
+                kv.Value.IsCharacteristic && kv.Value.NameText = name
+            | None -> 
+                kv.Value.IsCharacteristic
+        )
+        |> IOValueCollection
+
+    member this.Parameters(?Name) = 
+        values
+        |> ResizeArray.filter (fun kv -> 
+            match Name with 
+            | Some name -> 
+                kv.Value.IsParameter && kv.Value.NameText = name
+            | None -> 
+                kv.Value.IsParameter
+        )
+        |> IOValueCollection
+
+    member this.Factors(?Name) = 
+        values
+        |> ResizeArray.filter (fun kv -> 
+            match Name with 
+            | Some name -> 
+                kv.Value.IsFactor && kv.Value.NameText = name
+            | None -> 
+                kv.Value.IsFactor
+        )
+        |> IOValueCollection
+
+    member this.Components(?Name) = 
+        values
+        |> ResizeArray.filter (fun kv -> 
+            match Name with 
+            | Some name -> 
+                kv.Value.IsComponent && kv.Value.NameText = name
+            | None -> 
+                kv.Value.IsComponent
+        )
+        |> IOValueCollection
+
+    member this.WithCategory(category : OntologyAnnotation) = 
+        values
+        |> ResizeArray.filter (fun kv -> kv.Value.Category = category)
+        |> IOValueCollection
+
+    member this.WithName(name : string) = 
+        values
+        |> ResizeArray.filter (fun kv -> kv.Value.Category.NameText = name)
+        |> IOValueCollection
+
+    member this.GroupBySource =
+        values
+        |> Seq.groupBy (fun kv -> fst kv.Key)
+        |> Seq.map (fun (source,vals) -> source, vals |> Seq.map (fun kv -> snd kv.Key,kv.Value))
+
+    member this.GroupBySink =
+        values
+        |> Seq.groupBy (fun kv -> snd kv.Key)
+               |> Seq.map (fun (sink,vals) -> sink, vals |> Seq.map (fun kv -> fst kv.Key,kv.Value))
+    
+    interface IEnumerable<KeyValuePair<string*string,LDNode>> with
+        member this.GetEnumerator() = (values).GetEnumerator()
+
+    interface IEnumerable with
+        member this.GetEnumerator() = (this :> IEnumerable<KeyValuePair<string*string,LDNode>>).GetEnumerator() :> IEnumerator
+
+[<AutoOpen>]
+module IOValueCollectionExtensions =
+
+    type IOValueCollection with
+
+        /// Return the number of values in the collection
+        member this.Length = this.Values().Length
+
+        /// Return first ISAValue in collection
+        member this.First = this.Values().First
+
+        /// Return first ISAValue in collection
+        member this.Last = this.Values().Last
