@@ -1,4 +1,4 @@
-﻿namespace ARCtrl.QueryModel.ProcessCore
+﻿namespace ARCtrl.QueryModel
 
 
 /// Standard Collection operations for resize array

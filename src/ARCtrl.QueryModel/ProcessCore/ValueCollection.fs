@@ -8,8 +8,10 @@ open System.Collections
 open System.Collections.Generic
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
-type ValueCollection(values : ResizeArray<LDNode>) =
-    
+type ValueCollection(values : ResizeArray<QPropertyValue>) =
+
+    do values.[0].C
+
     /// Returns the nth Item in the collection
     member this.Item(i : int)  = values.[i]
 
@@ -167,11 +169,11 @@ type ValueCollection(values : ResizeArray<LDNode>) =
         values
         |> Seq.exists (fun v -> v.NameText = name)
 
-    interface IEnumerable<LDNode> with
+    interface IEnumerable<QPropertyValue> with
         member this.GetEnumerator() = (values).GetEnumerator()
 
     interface IEnumerable with
-        member this.GetEnumerator() = (this :> IEnumerable<LDNode>).GetEnumerator() :> IEnumerator
+        member this.GetEnumerator() = (this :> IEnumerable<QPropertyValue>).GetEnumerator() :> IEnumerator
 
     static member (@) (ps1 : ValueCollection,ps2 : ValueCollection) = ResizeArray.append ps1.Values ps2.Values |> ValueCollection
 
@@ -196,7 +198,7 @@ module ValueCollectionExtensions =
         member this.Last = this.Values.[this.Length - 1]
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
-type IOValueCollection(values : KeyValuePair<string*string,LDNode> ResizeArray) =
+type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> ResizeArray) =
 
     /// Returns the nth Item in the collection
     member this.Item(i : int)  = values.[i]
@@ -291,11 +293,11 @@ type IOValueCollection(values : KeyValuePair<string*string,LDNode> ResizeArray) 
         |> Seq.groupBy (fun kv -> snd kv.Key)
                |> Seq.map (fun (sink,vals) -> sink, vals |> Seq.map (fun kv -> fst kv.Key,kv.Value))
     
-    interface IEnumerable<KeyValuePair<string*string,LDNode>> with
+    interface IEnumerable<KeyValuePair<string*string,QPropertyValue>> with
         member this.GetEnumerator() = (values).GetEnumerator()
 
     interface IEnumerable with
-        member this.GetEnumerator() = (this :> IEnumerable<KeyValuePair<string*string,LDNode>>).GetEnumerator() :> IEnumerator
+        member this.GetEnumerator() = (this :> IEnumerable<KeyValuePair<string*string,QPropertyValue>>).GetEnumerator() :> IEnumerator
 
 [<AutoOpen>]
 module IOValueCollectionExtensions =
