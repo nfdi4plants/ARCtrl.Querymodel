@@ -15,29 +15,29 @@ type QLabProcess(node : LDNode) as this =
             failwithf "The provided node with id %s is not a valid Process" node.Id
         node.DeepCopyPropertiesTo(this)
 
-    static member input (labProcess : LDNode) =
+    static member input (labProcess : QLabProcess) =
         LDLabProcess.getObjects(labProcess, context = context)
         |> Seq.exactlyOne
         |> IONode
 
-    static member output (labProcess : LDNode) =
+    static member output (labProcess : QLabProcess) =
         LDLabProcess.getResults(labProcess, context = context)
         |> Seq.exactlyOne
         |> IONode
 
-    static member inputName (labProcess : LDNode) =
+    static member inputName (labProcess : QLabProcess) =
         let input = QLabProcess.input labProcess
         LDSample.getNameAsString(input, context = context)
 
-    static member outputName (labProcess : LDNode) =
+    static member outputName (labProcess : QLabProcess) =
         let output = QLabProcess.output labProcess
         LDSample.getNameAsString(output, context = context)
 
-    static member inputType (labProcess : LDNode)  =
+    static member inputType (labProcess : QLabProcess)  =
         let input = QLabProcess.input labProcess
         input.SchemaType
 
-    static member outputType (labProcess : LDNode) =
+    static member outputType (labProcess : QLabProcess) =
         let output = QLabProcess.output labProcess
         output.SchemaType
 
@@ -57,8 +57,23 @@ type QLabProcess(node : LDNode) as this =
         LDLabProcess.getParameterValues(this, context = context)
         |> ResizeArray.map (fun pvNode -> QPropertyValue(pvNode))
 
-    //member this.Values = 
-    //    this.Cells
-    //    |> Seq.choose (fun (header,cell) ->
-    //        ISAValue.tryCompose header cell                                       
-    //    )
+    member this.Protocol = 
+        LDLabProcess.tryGetExecutesLabProtocol(this, context = context)
+        |> Option.map (fun lpNode -> QLabProtocol(lpNode))
+
+    member this.Components = 
+        match this.Protocol with
+        | Some protocolNode ->
+            protocolNode.Components
+        | None -> ResizeArray()
+
+    member this.GetNextProcesses() =    
+        this.Input.ObjectOf()
+
+    member this.GetPreviousProcesses() =
+        this.Output.ResultOf()
+
+    member this.Values = 
+        this.Input.Characteristics
+        |> ResizeArray.append this.Output.Characteristics
+        |> ResizeArray.append this.ParameterValues

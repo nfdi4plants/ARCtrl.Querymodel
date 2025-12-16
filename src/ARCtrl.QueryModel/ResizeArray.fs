@@ -66,6 +66,11 @@ module ResizeArray =
                 b.Add(j)
         b
 
+    let singleton x =
+        let a = ResizeArray<_>(1)
+        a.Add(x)
+        a
+
     let distinct (a : ResizeArray<_>) =
         //let s = System.Collections.Generic.HashSet<_>()
         //let b = ResizeArray<_>()

@@ -8,9 +8,9 @@ open System.Collections
 open System.Collections.Generic
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
-type ValueCollection(values : ResizeArray<QPropertyValue>) =
+type QValueCollection(values : ResizeArray<QPropertyValue>) =
 
-    do values.[0].C
+    //do values.[0].C
 
     /// Returns the nth Item in the collection
     member this.Item(i : int)  = values.[i]
@@ -51,7 +51,7 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
     /// Get the values as list
     member this.Values = values
 
-    /// Return a new ValueCollection with only the characteristic values
+    /// Return a new QValueCollection with only the characteristic values
     member this.Characteristics(?Name) = 
         values
         |> ResizeArray.filter (fun v -> 
@@ -61,9 +61,9 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
             | None -> 
                 v.IsCharacteristic
         )
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Return a new ValueCollection with only the parameter values
+    /// Return a new QValueCollection with only the parameter values
     member this.Parameters(?Name) = 
         values
         |> ResizeArray.filter (fun v -> 
@@ -73,9 +73,9 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
             | None -> 
                 v.IsParameter
         )
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Return a new ValueCollection with only the factor values
+    /// Return a new QValueCollection with only the factor values
     member this.Factors(?Name) = 
         values
         |> ResizeArray.filter (fun v -> 
@@ -85,9 +85,9 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
             | None -> 
                 v.IsFactor
         )
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Return a new ValueCollection with only the factor values
+    /// Return a new QValueCollection with only the factor values
     member this.Components(?Name) = 
         values
         |> ResizeArray.filter (fun v -> 
@@ -97,74 +97,74 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
             | None -> 
                 v.IsComponent
         )
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Return a new ValueCollection with only those values, for which the predicate applied on the header return true
-    member this.Filter(predicate : OntologyAnnotation -> bool) = values |> ResizeArray.filter (fun v -> predicate v.Category) |> ValueCollection
+    /// Return a new QValueCollection with only those values, for which the predicate applied on the header return true
+    member this.Filter(predicate : OntologyAnnotation -> bool) = values |> ResizeArray.filter (fun v -> predicate v.Category) |> QValueCollection
 
-    /// Return a new ValueCollection with only those values, whichs header equals the given string
+    /// Return a new QValueCollection with only those values, whichs header equals the given string
     member this.WithName(name : string) = 
         this.Filter (fun v -> v.NameText = name)
 
-    /// Return a new ValueCollection with only those values, whichs header equals the given category
+    /// Return a new QValueCollection with only those values, whichs header equals the given category
     member this.WithCategory(category : OntologyAnnotation) = 
         this.Filter((=) category)
 
-    ///// Return a new ValueCollection with only those values, whichs header equals the given category or an equivalent category
+    ///// Return a new QValueCollection with only those values, whichs header equals the given category or an equivalent category
     /////
     ///// Equivalency is deduced from XRef relationships in the given Ontology
     //member this.WithEquivalentCategory(equivalentCategory : OntologyAnnotation, ont : OboOntology) = 
     //    this.Filter (fun v -> v.IsEquivalentTo(equivalentCategory, ont))
 
-    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its child categories
+    ///// Return a new QValueCollection with only those values, whichs header equals the given category or its child categories
     /////
     ///// Equivalency is deduced from isA relationships in the SwateAPI
     //member this.WithChildCategory(childCategory : OntologyAnnotation) = 
     //    this.Filter (fun v -> childCategory.IsChildTermOf(v))
 
-    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its child categories
+    ///// Return a new QValueCollection with only those values, whichs header equals the given category or its child categories
     /////
     ///// Equivalency is deduced from isA relationships in the given Ontology
     //member this.WithChildCategory(childCategory : OntologyAnnotation, ont : OboOntology) = 
     //    this.Filter (fun v -> childCategory.IsChildTermOf(v, ont))
 
-    /// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
+    /// Return a new QValueCollection with only those values, whichs header equals the given category or its parent categories
     ///
     /// Equivalency is deduced from isA relationships in the SwateAPI
     member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
         this.Filter (fun v -> v.IsChildTermOf(parentCategory))
 
-    ///// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
+    ///// Return a new QValueCollection with only those values, whichs header equals the given category or its parent categories
     /////
     ///// Equivalency is deduced from isA relationships in the given Ontology
     //member this.WithParentCategory(parentCategory : OntologyAnnotation, ont : OboOntology) = 
     //    this.Filter (fun v -> v.IsChildTermOf(parentCategory,ont))
 
-    /// Returns a new ValueCollection that contains no duplicate entries. 
+    /// Returns a new QValueCollection that contains no duplicate entries. 
     member this.Distinct() =
         values
         |> ResizeArray.distinct
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Returns a new ValueCollection that contains no two entries with the same header Category
+    /// Returns a new QValueCollection that contains no two entries with the same header Category
     member this.DistinctHeaderCategories() =
         values
         |> ResizeArray.distinctBy (fun v -> v.Category)
-        |> ValueCollection
+        |> QValueCollection
 
-    /// Returns true, if the ValueCollection contains a values, whichs header equals the given category or its child categories
+    /// Returns true, if the QValueCollection contains a values, whichs header equals the given category or its child categories
     ///
     /// Equivalency is deduced from isA relationships in the SwateAPI
     member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
         values
         |> Seq.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
 
-    /// Returns true, if the ValueCollection contains a values, whichs header equals the given category
+    /// Returns true, if the QValueCollection contains a values, whichs header equals the given category
     member this.Contains(category : OntologyAnnotation) =
         values
         |> Seq.exists (fun v -> v.Category = category)
 
-    /// Returns true, if the ValueCollection contains a values, whichs headername equals the given category
+    /// Returns true, if the QValueCollection contains a values, whichs headername equals the given category
     member this.Contains(name : string) =
         values
         |> Seq.exists (fun v -> v.NameText = name)
@@ -175,12 +175,12 @@ type ValueCollection(values : ResizeArray<QPropertyValue>) =
     interface IEnumerable with
         member this.GetEnumerator() = (this :> IEnumerable<QPropertyValue>).GetEnumerator() :> IEnumerator
 
-    static member (@) (ps1 : ValueCollection,ps2 : ValueCollection) = ResizeArray.append ps1.Values ps2.Values |> ValueCollection
+    static member (@) (ps1 : QValueCollection,ps2 : QValueCollection) = ResizeArray.append ps1.Values ps2.Values |> QValueCollection
 
 [<AutoOpen>]
-module ValueCollectionExtensions =
+module QValueCollectionExtensions =
 
-    type ValueCollection with
+    type QValueCollection with
 
         /// Return the number of values in the collection
         member this.IsEmpty = this.Values.Count = 0
@@ -198,7 +198,7 @@ module ValueCollectionExtensions =
         member this.Last = this.Values.[this.Length - 1]
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
-type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> ResizeArray) =
+type IOQValueCollection(values : KeyValuePair<string*string,QPropertyValue> ResizeArray) =
 
     /// Returns the nth Item in the collection
     member this.Item(i : int)  = values.[i]
@@ -212,11 +212,11 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
     member this.WithInput(inp : string) = 
         values 
         |> ResizeArray.choose (fun kv -> if (fst kv.Key) = inp then Some kv.Value else None)
-        |> ValueCollection
+        |> QValueCollection
 
     member this.WithOutput(inp : string) = 
         values |> ResizeArray.choose (fun kv -> if (snd kv.Key) = inp then Some kv.Value else None)
-        |> ValueCollection
+        |> QValueCollection
 
     member this.Values(?Name) = 
         values 
@@ -227,7 +227,7 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
                 else None
             | None -> Some kv.Value
         )
-        |> ValueCollection
+        |> QValueCollection
 
     member this.Characteristics(?Name) = 
         values
@@ -238,7 +238,7 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
             | None -> 
                 kv.Value.IsCharacteristic
         )
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.Parameters(?Name) = 
         values
@@ -249,7 +249,7 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
             | None -> 
                 kv.Value.IsParameter
         )
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.Factors(?Name) = 
         values
@@ -260,7 +260,7 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
             | None -> 
                 kv.Value.IsFactor
         )
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.Components(?Name) = 
         values
@@ -271,17 +271,17 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
             | None -> 
                 kv.Value.IsComponent
         )
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.WithCategory(category : OntologyAnnotation) = 
         values
         |> ResizeArray.filter (fun kv -> kv.Value.Category = category)
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.WithName(name : string) = 
         values
         |> ResizeArray.filter (fun kv -> kv.Value.Category.NameText = name)
-        |> IOValueCollection
+        |> IOQValueCollection
 
     member this.GroupBySource =
         values
@@ -300,9 +300,9 @@ type IOValueCollection(values : KeyValuePair<string*string,QPropertyValue> Resiz
         member this.GetEnumerator() = (this :> IEnumerable<KeyValuePair<string*string,QPropertyValue>>).GetEnumerator() :> IEnumerator
 
 [<AutoOpen>]
-module IOValueCollectionExtensions =
+module IOQValueCollectionExtensions =
 
-    type IOValueCollection with
+    type IOQValueCollection with
 
         /// Return the number of values in the collection
         member this.Length = this.Values().Length
