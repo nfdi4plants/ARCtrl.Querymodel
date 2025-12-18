@@ -68,8 +68,8 @@ module ARCExtensions =
 
         member this.GetDataContextMap() =
             let dcs = 
-                this.Assays |> Seq.choose (fun a -> a.DataMap)
-                |> Seq.append (this.Studies  |> Seq.choose (fun s -> s.DataMap))
+                this.Assays |> Seq.choose (fun a -> a.Datamap)
+                |> Seq.append (this.Studies  |> Seq.choose (fun s -> s.Datamap))
                 |> Seq.collect (fun dm -> dm.DataContexts)
             dcs
             |> Seq.choose (fun dc -> 
@@ -78,5 +78,5 @@ module ARCExtensions =
             |> Helper.Dictionary.ofSeq
 
         member this.DataContextMapping() =
-           this.Assays |> Seq.iter (fun a -> if a.DataMap.IsSome then DataContext.dataContexts.AddRange a.DataMap.Value.DataContexts)
-           this.Studies |> Seq.iter (fun s -> if s.DataMap.IsSome then DataContext.dataContexts.AddRange s.DataMap.Value.DataContexts)
+           this.Assays |> Seq.iter (fun a -> if a.Datamap.IsSome then DataContext.dataContexts.AddRange a.Datamap.Value.DataContexts)
+           this.Studies |> Seq.iter (fun s -> if s.Datamap.IsSome then DataContext.dataContexts.AddRange s.Datamap.Value.DataContexts)

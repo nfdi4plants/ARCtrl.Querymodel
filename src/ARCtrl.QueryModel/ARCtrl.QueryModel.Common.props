@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <Description>Library for graph-based querying of Annotated Research Contexts (ARCs).</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+
+  </PropertyGroup>
+</Project>

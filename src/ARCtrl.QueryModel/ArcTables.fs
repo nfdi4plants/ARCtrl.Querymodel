@@ -1,8 +1,6 @@
 ﻿namespace rec ARCtrl.QueryModel
 
 open ARCtrl
-open System.Text.Json.Serialization
-open System.Text.Json
 open System.IO
 
 open System.Collections.Generic

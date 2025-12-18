@@ -2,8 +2,8 @@
 
 open ARCtrl
 open ARCtrl.Process
-open System.Text.Json.Serialization
-open System.Text.Json
+//
+//open System.Text.Json
 open System.IO
 
 open System.Collections.Generic
@@ -13,7 +13,7 @@ open System.Collections
 [<AutoOpen>]
 module ProtocolExtensions = 
 
-    type Protocol with
+    //type Protocol with
     
         //static member rowIndexKeyName = "RowIndex"
 
@@ -96,11 +96,11 @@ module ProtocolExtensions =
         //        ps.[0].SetRowRange r
         //        |> Protocol.dropRowIndex
 
-        member this.IsChildProtocolOf(parentProtocolType : OntologyAnnotation) =
-            match this.ProtocolType with
-            | Some pt ->
-                OntologyAnnotation.isChildTerm(parentProtocolType,pt)
-            | _ -> false
+        //member this.IsChildProtocolOf(parentProtocolType : OntologyAnnotation) =
+        //    match this.ProtocolType with
+        //    | Some pt ->
+        //        OntologyAnnotation.isChildTerm(parentProtocolType,pt)
+        //    | _ -> false
 
         //member this.IsChildProtocolOf(parentProtocolType : OntologyAnnotation, obo : OBO.NET.OboOntology) =
         //    match this.ProtocolType with

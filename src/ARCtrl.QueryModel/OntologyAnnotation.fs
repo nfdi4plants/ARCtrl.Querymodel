@@ -1,25 +1,25 @@
 ﻿namespace ARCtrl.QueryModel
 
-open ARCtrl
-open Swate.Api
-open ARCtrl.Process
+//open ARCtrl
+//open Swate.Api
+//open ARCtrl.Process
 
-[<AutoOpen>]
-module OntologyAnnotation =
+//[<AutoOpen>]
+//module OntologyAnnotation =
 
-    type OntologyAnnotation with
+//    type OntologyAnnotation with
        
 
-        /// Translates a SwateAPI `term` into an ISADotNet `OntologyAnnotation`
-        static member ofTerm (term : Term) =
-            let description = Comment("Description",term.Definition)
-            let oa = OntologyAnnotation(term.Name,tan = term.Accession,comments = ResizeArray [|description|])
-            oa.TermSourceREF <- oa.TANInfo |> Option.map (fun t -> t.IDSpace)
-            oa
+//        /// Translates a SwateAPI `term` into an ISADotNet `OntologyAnnotation`
+//        static member ofTerm (term : Term) =
+//            let description = Comment("Description",term.Definition)
+//            let oa = OntologyAnnotation(term.Name,tan = term.Accession,comments = ResizeArray [|description|])
+//            oa.TermSourceREF <- oa.TANInfo |> Option.map (fun t -> t.IDSpace)
+//            oa
 
-        /// Translates an ISADotNet `OntologyAnnotation` into a SwateAPI `term`
-        static member toTerm (term : OntologyAnnotation) =
-            TermMinimal.create term.NameText term.TermAccessionShort
+//        /// Translates an ISADotNet `OntologyAnnotation` into a SwateAPI `term`
+//        static member toTerm (term : OntologyAnnotation) =
+//            TermMinimal.create term.NameText term.TermAccessionShort
 
         ///// Translates a OBO `term` into an ISADotNet `OntologyAnnotation`
         //static member ofOboTerm (term : OboTerm) =
@@ -33,11 +33,11 @@ module OntologyAnnotation =
         //member this.ToOboTerm() =
         //    OntologyAnnotation.toOboTerm this
 
-        member this.ToTerm() =
-            OntologyAnnotation.toTerm(this)
+        //member this.ToTerm() =
+        //    OntologyAnnotation.toTerm(this)
 
-        static member findTerm(nameOrId : string) =
-            Term.Search(nameOrId, 1).[0]
+        //static member findTerm(nameOrId : string) =
+        //    Term.Search(nameOrId, 1).[0]
 
         //static member findTerm(nameOrId : string,ont : OboOntology) =
         //    match ont.TryGetOntologyAnnotation nameOrId with
@@ -52,13 +52,13 @@ module OntologyAnnotation =
         //    ont.GetParentOntologyAnnotations(child)
         //    |> List.contains parent
 
-        member this.IsChildTermOf(parent : OntologyAnnotation) =
-            OntologyAnnotation.isChildTerm(parent,this)
+        //member this.IsChildTermOf(parent : OntologyAnnotation) =
+        //    OntologyAnnotation.isChildTerm(parent,this)
 
-        static member isChildTerm (parent : OntologyAnnotation,child : OntologyAnnotation) =
-            Term.SearchByParent(child.NameText, 1, parent |> OntologyAnnotation.toTerm)
-            |> Array.isEmpty
-            |> not       
+        //static member isChildTerm (parent : OntologyAnnotation,child : OntologyAnnotation) =
+        //    Term.SearchByParent(child.NameText, 1, parent |> OntologyAnnotation.toTerm)
+        //    |> Array.isEmpty
+        //    |> not       
 
         //member this.IsChildTermOf(parent : OntologyAnnotation, ont : OboOntology) =
         //    OntologyAnnotation.isChildTerm(parent,this,ont)
@@ -84,20 +84,20 @@ module OntologyAnnotation =
         //member this.TryGetAs(targetOntology : string, ont : OboOntology) =
         //    OntologyAnnotation.tryGetAs(this,targetOntology,ont)
 
-    type Protocol with
+    //type Protocol with
         
-        static member isChildProtocolTypeOf(protocol : Protocol,parent : OntologyAnnotation) =
-            protocol.ProtocolType
-            |> Option.map (fun t -> t.IsChildTermOf(parent))
-            |> Option.defaultValue false
+    //    static member isChildProtocolTypeOf(protocol : Protocol,parent : OntologyAnnotation) =
+    //        protocol.ProtocolType
+    //        |> Option.map (fun t -> t.IsChildTermOf(parent))
+    //        |> Option.defaultValue false
 
         //static member isChildProtocolTypeOf(protocol : Protocol,parent : OntologyAnnotation, ont : OboOntology) =
         //    protocol.ProtocolType
         //    |> Option.map (fun t -> t.IsChildTermOf(parent,ont))
         //    |> Option.defaultValue false
 
-        member this.IsChildProtocolTypeOf(parent : OntologyAnnotation) =
-            Protocol.isChildProtocolTypeOf(this,parent)
+        //member this.IsChildProtocolTypeOf(parent : OntologyAnnotation) =
+        //    Protocol.isChildProtocolTypeOf(this,parent)
 
         //member this.IsChildProtocolTypeOf(parent : OntologyAnnotation, ont : OboOntology) =
         //    Protocol.isChildProtocolTypeOf(this,parent,ont)
