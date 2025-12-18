@@ -27,14 +27,14 @@
     "moduleResolution": "Node",
     "declarationDir": "dist/ts/types"
   },
-  "include": [ "src/ARCtrl/index.ts" ],
+  "include": [ "src/ARCtrl.QueryModel/index.ts" ],
   "exclude": [
     "node_modules",
     "dist",
     // "./src/**/*.test.tsx",
     // "./src/**/*.stories.jsx",
     // "./src/**/*.stories.tsx",
-    "./src/ARCtrl/ts/fable_modules"
+    "./src/ARCtrl.QueryModel/ts/fable_modules"
   ]//,
   // "compilerOptions.paths" : {
   //   "fable_module/*": ["./src/fable_module/*"]

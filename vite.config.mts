@@ -5,15 +5,15 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
     plugins: [
         dts({
-            entryRoot: 'src/ARCtrl',
-            include: ['src/ARCtrl/**/*.ts', 'src/ARCtrl/**/*.mts'],
+            entryRoot: 'src/ARCtrl.QueryModel',
+            include: ['src/ARCtrl.QueryModel/**/*.ts', 'src/ARCtrl.QueryModel/**/*.mts'],
         }),
     ],
     build: {
         outDir: 'dist/ts', // Both JS and .d.ts files will go here
         target: 'esnext',
         lib: {
-          entry: path.resolve(__dirname, 'src/ARCtrl/index.ts'),
+            entry: path.resolve(__dirname, 'src/ARCtrl.QueryModel/index.ts'),
           name: 'ARCtrl', // Global variable name if using UMD/IIFE
           fileName: (format) => `arctrl.${format}.js`,
           formats: ['es'], // Common formats
@@ -31,7 +31,7 @@ export default defineConfig({
             ], // put your external packages here
             output: {
                 preserveModules: true,
-                preserveModulesRoot: 'src/ARCtrl',
+                preserveModulesRoot: 'src/ARCtrl.QueryModel',
                 entryFileNames: "[name].js",
                 chunkFileNames: "[name].js",
             },

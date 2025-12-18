@@ -8,7 +8,7 @@ let project = "ARCtrl.Querymodel"
 let testProjects = 
     [
         //"tests/ARCtrl.NET.Tests/ARCtrl.NET.Tests.fsproj"
-        "tests/ARCtrl.Querymodel.Tests/ARCtrl.Querymodel.Tests.fsproj"
+        "tests/ARCtrl.Querymodel.Tests/"
     ]
 
 /// Native JS test paths

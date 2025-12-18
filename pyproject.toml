@@ -1,5 +1,5 @@
 [project]
-name = "arctrl"
+name = "arctrl_querymodel"
 version = "3.0.0a1"
 description = "Library for graph-based querying of Annotated Research Contexts (ARCs)."
 authors = [
@@ -34,7 +34,7 @@ include = [
     "src/ARCtrl.Querymodel/py/**/*.py"
 ]
 packages = [
-    { include = "**/*.py", from = "src/ARCtrl.Querymodel/", to = "arctrl" }
+    { include = "**/*.py", from = "src/ARCtrl.Querymodel/", to = "arctrl_querymodel" }
 ]
 
 [build-system]

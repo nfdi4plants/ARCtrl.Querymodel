@@ -19,8 +19,6 @@
   </ItemGroup>  
   
   <ItemGroup>
-    <PackageReference Include="YoloDev.Expecto.TestSdk"/>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <ProjectReference Condition="'$(FABLE_COMPILER)' != 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.fsproj" />
     <ProjectReference Condition="'$(FABLE_COMPILER_JAVASCRIPT)' == 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.Javascript.fsproj" />
     <ProjectReference Condition="'$(FABLE_COMPILER_TYPESCRIPT)' == 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.Javascript.fsproj" />

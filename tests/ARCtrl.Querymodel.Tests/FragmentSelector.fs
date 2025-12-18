@@ -1,6 +1,6 @@
 ﻿module FragmentSelector.Tests
 
-open Expecto
+open Fable.Pyxpecto
 open ARCtrl
 open ARCtrl.QueryModel
 let testArcPath = __SOURCE_DIRECTORY__ + @"\TestObjects\TestArc"
@@ -126,8 +126,6 @@ let csv_tests =
         ]
     ]
 
-
-[<Tests>]
 let main = testList "FragmentSelectorTests" [
     csv_tests
 ]

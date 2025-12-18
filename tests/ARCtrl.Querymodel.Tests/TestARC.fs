@@ -1,7 +1,6 @@
 ﻿module TestARC.Tests
 
-open Expecto
-open System.Text.Json
+open Fable.Pyxpecto
 open ARCtrl
 open ARCtrl.Process
 open ARCtrl.QueryModel
@@ -18,19 +17,19 @@ let ArcTables_getNodes =
             let nodes = testArc.ArcTables.LastData
             let nodeNames = nodes |> List.map (fun n -> n.Name)
             let expected = ["sampleOutCold.txt"; "sampleOutHeat.txt"]
-            Expect.sequenceEqual nodeNames expected "LastData of full sequence"            
+            Suspect.sequenceEqual nodeNames expected "LastData of full sequence"
         )
         testCase "LastSamples" (fun () ->
             let nodes = testArc.ArcTables.LastSamples
             let nodeNames = nodes |> List.map (fun n -> n.Name)
             let expected = ["CC1_prep"; "CC2_prep"; "CC3_prep"; "Co1_prep"; "Co2_prep"; "Co3_prep"; "C1_prep"; "C2_prep"; "C3_prep"; "H1_prep"; "H2_prep"; "H3_prep"]
-            Expect.sequenceEqual expected nodeNames "LastSamples of full sequence"                 
+            Suspect.sequenceEqual expected nodeNames "LastSamples of full sequence"                 
         )
         testCase "LastNodes" (fun () ->
             let nodes = testArc.ArcTables.LastNodes
             let nodeNames = nodes |> Seq.map (fun n -> n.Name)
             let expected = ["sampleOutCold.txt"; "sampleOutHeat.txt"]
-            Expect.sequenceEqual nodeNames expected "LastData of full sequence"    
+            Suspect.sequenceEqual nodeNames expected "LastData of full sequence"    
         )
         //testCase "RawData" (fun () ->
         //    let nodes = isa.ArcTables.RawData
@@ -59,7 +58,7 @@ let Assay_getNodes =
             let nodes = testArc.GetAssay("MSEval_Heat").LastNodes
             let nodeNames = nodes |> Seq.map (fun n -> n.Name)
             let expected = ["sampleOutHeat.txt"]
-            Expect.sequenceEqual nodeNames expected "LastData of full sequence"    
+            Suspect.sequenceEqual nodeNames expected "LastData of full sequence"    
         )
     ]
 let Assay_ValuesOf =
@@ -69,25 +68,25 @@ let Assay_ValuesOf =
             let values = testArc.GetAssay("MSEval_Heat").ValuesOf("sampleOutHeat.txt").WithName("Column")
             let valueValues = values |> Seq.map (fun n -> n.ValueText)
             let expected = ["C1 Intensity";"C2 Intensity";"C3 Intensity";"H1 Intensity";"H2 Intensity";"H3 Intensity"]
-            Expect.sequenceEqual valueValues expected "Did not return all values correctly"    
+            Suspect.sequenceEqual valueValues expected "Did not return all values correctly"    
         )
         testCase "SucceedingValuesOfInput_PooledOutput" (fun () ->
             let values = testArc.GetAssay("MSEval_Heat").SucceedingValuesOf("C2_measured").WithName("Column")
             let valueValues = values |> Seq.map (fun n -> n.ValueText)
             let expected = ["C2 Intensity"]
-            Expect.sequenceEqual valueValues expected "Did not return the single value correctly"    
+            Suspect.sequenceEqual valueValues expected "Did not return the single value correctly"    
         )
         testCase "PreviousValuesOfInput_PooledOutput" (fun () ->
             let values = testArc.GetAssay("MSEval_Heat").PreviousValuesOf("C2_measured").WithName("Column")
             let valueValues = values |> Seq.map (fun n -> n.ValueText)
             let expected = []
-            Expect.sequenceEqual valueValues expected "Should return no values"    
+            Suspect.sequenceEqual valueValues expected "Should return no values"    
         )
         testCase "ValuesOfInput_PooledOutput" (fun () ->
             let values = testArc.GetAssay("MSEval_Heat").ValuesOf("C2_measured").WithName("Column")
             let valueValues = values |> Seq.map (fun n -> n.ValueText)
             let expected = ["C2 Intensity"]
-            Expect.sequenceEqual valueValues expected "Did not return the single value correctly"    
+            Suspect.sequenceEqual valueValues expected "Did not return the single value correctly"    
         )
 
     ]
@@ -122,7 +121,7 @@ let ArcTables_ValueOf =
                     expectedTechRep;expectedInjVol
                     expectedTechRep;expectedInjVol
                 ]
-            Expect.sequenceEqual values expected "Did not return correct values for specific table"
+            Suspect.sequenceEqual values expected "Did not return correct values for specific table"
         )
         testCase "ValuesOf" (fun () ->
             let nodeName = "sampleOutHeat.txt"
@@ -132,7 +131,7 @@ let ArcTables_ValueOf =
                 |> Seq.map (fun x -> x.NameText)
             let expected = 
                 ["biological replicate";"organism";"temperature day";"pH";"technical replicate"; "injection volume setting";"analysis software";"Column"]
-            Expect.sequenceEqual valueHeaders expected "Did not return correct values for all table"
+            Suspect.sequenceEqual valueHeaders expected "Did not return correct values for all table"
         )
         testCase "GetSpecificValue" (fun () ->
             let rep1 = testArc.ArcTables.ValuesOf("C1_measured").WithName("biological replicate").First.ValueText
@@ -142,7 +141,7 @@ let ArcTables_ValueOf =
         )
         testCase "ValuesOf_SpecificTable_PooledOutput" (fun () ->
             let vals = testArc.ArcTables.ValuesOf("sampleOutHeat.txt","Growth_Heat").WithName("biological replicate").Values |> List.map (fun v -> v.ValueText)         
-            Expect.sequenceEqual vals ["1";"2";"3";"1";"2";"3"] "Did not return correct values"
+            Suspect.sequenceEqual vals ["1";"2";"3";"1";"2";"3"] "Did not return correct values"
         )
         testCase "SpecificValue_SpecificTable_PooledOutput" (fun () ->
             let vals = testArc.ArcTables.ValuesOf("C2_prep","Growth_Heat").WithName("biological replicate").First.ValueText
@@ -150,11 +149,6 @@ let ArcTables_ValueOf =
         )
     ]
 
-
-
-
-
-[<Tests>]
 let main = testList "TestArcTests" [
     ArcTables_getNodes
     Assay_getNodes

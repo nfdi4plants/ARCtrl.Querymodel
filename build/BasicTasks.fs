@@ -178,9 +178,9 @@ let build = BuildTask.create "Build" [clean] {
 }
 
 let transpileTS = BuildTask.create "TranspileTS" [clean] {
-    run dotnet $"fable ./src/ARCtrl/ARCtrl.Javascript.fsproj --lang ts --fableLib @fable-org/fable-library-js --noCache -o src/ARCtrl/ts" ""
+    run dotnet $"fable ./src/ARCtrl.QueryModel/ARCtrl.QueryModel.Javascript.fsproj --lang ts --fableLib @fable-org/fable-library-js --noCache -o src/ARCtrl.QueryModel/ts" ""
 }
 
 let transpilePy = BuildTask.create "TranspilePy" [clean] {
-    run dotnet $"fable ./src/ARCtrl/ARCtrl.Python.fsproj --lang python --noCache -o src/ARCtrl/py" ""
+    run dotnet $"fable ./src/ARCtrl.QueryModel/ARCtrl.QueryModel.Python.fsproj --lang python --noCache -o src/ARCtrl.QueryModel/py" ""
 }

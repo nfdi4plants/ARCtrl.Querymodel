@@ -52,8 +52,8 @@ module DataContext =
 
     let getAbsolutePath (basePath : string) (dc : DataContext) =
         match dc.FilePath with
-        | Some fp when System.IO.Path.IsPathRooted(fp) -> fp
-        | Some fp -> System.IO.Path.Combine(basePath,fp)
+        | Some fp when fp.Contains(basePath) (*System.IO.Path.IsPathRooted(fp)*) -> fp
+        | Some fp -> ARCtrl.ArcPathHelper.combine basePath fp
         | None -> basePath
 
 [<AutoOpen>]
