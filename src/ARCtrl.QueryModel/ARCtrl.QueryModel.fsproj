@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageTags>ARC;F#;FSharp;dotnet;.Net;bioinformatics;biology;fable-library;datascience;dataplant;nfdi;metadata</PackageTags>
+    <PackageTags>ARC;F#;FSharp;dotnet;.Net;bioinformatics;biology;fable-library;datascience;dataplant;nfdi;metadata;fable-dotnet</PackageTags>
   </PropertyGroup>
   <Import Project="../Package.Metadata.props" />
   
@@ -31,11 +31,6 @@
     <Compile Include="Linq\QueryBuilder.fs" />
     <Compile Include="Linq\Query.fs" />
     <Compile Include="Linq\Spreadsheet.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

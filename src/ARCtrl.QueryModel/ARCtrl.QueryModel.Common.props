@@ -1,8 +1,13 @@
 <Project>
   <PropertyGroup>
     <Description>Library for graph-based querying of Annotated Research Contexts (ARCs).</Description>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-
+    
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Fable.Package.SDK">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  
 </Project>

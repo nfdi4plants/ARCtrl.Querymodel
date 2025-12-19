@@ -4,6 +4,7 @@
         <TargetFramework>netstandard2.1</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <FablePackageType>library</FablePackageType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
         
     <PropertyGroup>
@@ -16,10 +17,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.Package.SDK">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <None Include="../../build/logo.png" Pack="true" PackagePath="\" />
+      <None Include="../../build/logo.png" Pack="true" PackagePath="\" />
+      <None Include="../../README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 </Project>
