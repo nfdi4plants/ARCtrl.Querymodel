@@ -4,22 +4,22 @@ open ARCtrl.Helper.Regex.ActivePatterns
 open Fable.Core
 
 [<Literal>]
-let rowRegex = """(?<=row=)\d*$"""
+let rowRegex = """row=(?<row>\d*)$"""
 
 [<Literal>]
-let columnRegex = """(?<=col=)\d*$"""
+let columnRegex = """col=(?<column>\d*)$"""
 
 [<Literal>]
-let cellRegex = """(?<=cell=)(?<row>\d*),(?<column>\d*)$"""
+let cellRegex = """cell=(?<row>\d*),(?<column>\d*)$"""
 
 [<Literal>]
-let rowRangeRegex = """(?<=row=)(?<start>\d*)-(?<end>\d*)$"""
+let rowRangeRegex = """row=(?<start>\d*)-(?<end>\d*)$"""
 
 [<Literal>]
-let columnRangeRegex = """(?<=col=)(?<start>\d*)-(?<end>\d*)$"""
+let columnRangeRegex = """col=(?<start>\d*)-(?<end>\d*)$"""
 
 [<Literal>]
-let cellRangeRegex = """(?<=cell=)(?<startRow>\d*),(?<startColumn>\d*)-(?<endRow>\d*),(?<endColumn>\d*)$"""
+let cellRangeRegex = """cell=(?<startRow>\d*),(?<startColumn>\d*)-(?<endRow>\d*),(?<endColumn>\d*)$"""
 
 //ARCtrl.Helper.Regex.ActivePatterns.Regex
 
@@ -62,10 +62,10 @@ type CSV =
     static member fromString(s : string) =
         match s with
         | Regex rowRegex m -> 
-            let row = m.Value |> int
+            let row = m.Groups.["row"].Value |> int
             Row row
         | Regex columnRegex m -> 
-            let column = m.Value |> int
+            let column = m.Groups.["column"].Value |> int
             Column column
         | Regex cellRegex m -> 
             let row = m.Groups.["row"].Value |> int
@@ -122,7 +122,7 @@ type CSV =
     static member getZeroBasedColumnIndexFromString(s : string) =
         match s with
         | Regex columnRegex m -> 
-            let column = m.Value |> int
+            let column = m.Groups.["column"].Value |> int
             column - 1
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv column." s
 
@@ -130,7 +130,7 @@ type CSV =
     static member getZeroBasedRowIndexFromString(s : string) =
         match s with
         | Regex rowRegex m -> 
-            let row = m.Value |> int
+            let row = m.Groups.["row"].Value |> int
             row - 1
         | _ -> failwithf "Fragment Selector \"%s\" could not be parsed as text/csv row." s
 

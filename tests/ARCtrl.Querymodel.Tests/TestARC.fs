@@ -38,7 +38,7 @@ let ArcTables_getNodes =
             let nodes = testArc.ArcTables.LastNodes
             let nodeNames = nodes |> Seq.map (fun n -> n.Name)
             let expected = ["sampleOutCold.txt"; "sampleOutHeat.txt"]
-            Suspect.sequenceEqual nodeNames expected "LastData of full sequence"    
+            Suspect.sequenceEqual nodeNames expected "Last Nodes of full sequence"    
         }
         //testCase "RawData" (fun () ->
         //    let nodes = isa.ArcTables.RawData

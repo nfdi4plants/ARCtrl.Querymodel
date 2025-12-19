@@ -132,7 +132,9 @@ module ArcTables =
                     QNode(oname,ot,ps)
                     |> Some
                 )
-            |> ResizeArray.distinctBy (fun n -> n.Name)
+            |> Seq.distinctBy (fun n -> n.Name)
+            |> ResizeArray
+            //|> ResizeArray.distinctBy (fun n -> n.Name)
 
         /// Returns the names of all nodes for which the predicate reutrns true
         static member getNodesBy (predicate : IOType -> bool) (ps : #ArcTables) =
@@ -145,7 +147,9 @@ module ArcTables =
                         if predicate r.OutputType then  QNode(r.Output, r.InputType, ps)
                     ])
             )
-            |> ResizeArray.distinct 
+            //|> ResizeArray.distinct 
+            |> Seq.distinct
+            |> ResizeArray
 
         /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints, and for which the predicate returns true
         static member getRootInputsBy (predicate : IOType -> bool) (ps : #ArcTables) =

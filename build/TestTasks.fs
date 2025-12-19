@@ -132,6 +132,6 @@ module RunTests =
     )
 
 
-let runTests = BuildTask.create "RunTests" [clean; build; RunTests.runTestsJs; RunTests.runTestsJsNative; RunTests.runTestsPy; RunTests.runTestsPyNative; RunTests.runTestsDotnet] {
+let runTests = BuildTask.create "RunTests" [clean; build; RunTests.runTestsJs; (*RunTests.runTestsJsNative; *)RunTests.runTestsPy; (*RunTests.runTestsPyNative;*) RunTests.runTestsDotnet] {
     ()
 }

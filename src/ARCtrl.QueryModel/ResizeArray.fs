@@ -59,18 +59,23 @@ module ResizeArray =
         b
 
     let distinct (a : ResizeArray<_>) =
-        let b = ResizeArray<_>()
-        for i in a do
-            if not (b.Contains(i)) then
-                b.Add(i)
-        b
+        //let s = System.Collections.Generic.HashSet<_>()
+        //let b = ResizeArray<_>()
+        //for i in a do
+        //    if s.Add(i) then          
+        //        b.Add(i)
+        //b
+        Seq.distinct a
+        |> ResizeArray
+
 
     let distinctBy f (a : ResizeArray<_>) =
-        let b = ResizeArray<_>()
-        let c = ResizeArray<_>()
-        for i in a do
-            let k = f i
-            if not (c.Contains(k)) then
-                c.Add(k)
-                b.Add(i)
-        b
+        //let s = System.Collections.Generic.HashSet<_>()
+        //let b = ResizeArray<_>()
+        //for i in a do
+        //    let k = f i
+        //    if s.Add(k) then
+        //        b.Add(k)
+        //b
+        Seq.distinctBy f a
+        |> ResizeArray
