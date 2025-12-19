@@ -1,8 +1,6 @@
 ﻿namespace ARCtrl.QueryModel
 
 open ARCtrl
-open System.Text.Json.Serialization
-open System.Text.Json
 open System.IO
 
 open System.Collections.Generic
@@ -27,10 +25,10 @@ type ValueCollection(values : ISAValue list) =
         values 
         |> List.pick (fun v -> if v.Category = category then Some v else None)
 
-    /// Returns an Item in the collection whichs header category is a child of the given parent category
-    member this.ItemWithParent(parentCategory : OntologyAnnotation) = 
-        values 
-        |> List.pick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+    ///// Returns an Item in the collection whichs header category is a child of the given parent category
+    //member this.ItemWithParent(parentCategory : OntologyAnnotation) = 
+    //    values 
+    //    |> List.pick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
 
     /// Returns the nth Item in the collection if it exists, else returns None
     member this.TryItem(i : int)  = if values.Length > i then Some values.[i] else None
@@ -45,10 +43,10 @@ type ValueCollection(values : ISAValue list) =
         values 
         |> List.tryPick (fun v -> if v.Category = category then Some v else None)
 
-    /// Returns an Item in the collection whichs header category is a child of the given parent category, else returns None
-    member this.TryItemWithParent(parentCategory : OntologyAnnotation) = 
-        values 
-        |> List.tryPick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+    ///// Returns an Item in the collection whichs header category is a child of the given parent category, else returns None
+    //member this.TryItemWithParent(parentCategory : OntologyAnnotation) = 
+    //    values 
+    //    |> List.tryPick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
 
     /// Get the values as list
     member this.Values = values
@@ -132,9 +130,9 @@ type ValueCollection(values : ISAValue list) =
 
     /// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
     ///
-    /// Equivalency is deduced from isA relationships in the SwateAPI
-    member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
-        this.Filter (fun v -> v.IsChildTermOf(parentCategory))
+    ///// Equivalency is deduced from isA relationships in the SwateAPI
+    //member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
+    //    this.Filter (fun v -> v.IsChildTermOf(parentCategory))
 
     ///// Return a new ValueCollection with only those values, whichs header equals the given category or its parent categories
     /////
@@ -154,12 +152,12 @@ type ValueCollection(values : ISAValue list) =
         |> List.distinctBy (fun v -> v.Category)
         |> ValueCollection
 
-    /// Returns true, if the ValueCollection contains a values, whichs header equals the given category or its child categories
-    ///
-    /// Equivalency is deduced from isA relationships in the SwateAPI
-    member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
-        values
-        |> List.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
+    ///// Returns true, if the ValueCollection contains a values, whichs header equals the given category or its child categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the SwateAPI
+    //member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
+    //    values
+    //    |> List.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
 
     /// Returns true, if the ValueCollection contains a values, whichs header equals the given category
     member this.Contains(category : OntologyAnnotation) =

@@ -1,8 +1,6 @@
 ﻿namespace ARCtrl.QueryModel
 
 open ARCtrl
-open System.Text.Json.Serialization
-
 
 [<AutoOpen>]
 module CategoryExtensions = 

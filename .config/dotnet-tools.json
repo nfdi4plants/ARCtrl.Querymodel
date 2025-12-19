@@ -2,17 +2,12 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "fake-cli": {
-      "version": "5.22.0",
+    "fable": {
+      "version": "4.24.0",
       "commands": [
-        "fake"
-      ]
-    },
-    "paket": {
-      "version": "6.2.1",
-      "commands": [
-        "paket"
-      ]
+        "fable"
+      ],
+      "rollForward": false
     }
   }
 }

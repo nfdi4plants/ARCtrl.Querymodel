@@ -1,0 +1,23 @@
+<Project>
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <FablePackageType>library</FablePackageType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+        
+    <PropertyGroup>
+        <Authors>nfdi4plants, Lukas Weil</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>logo.png</PackageIcon>
+        <PackageProjectUrl>https://github.com/nfdi4plants/ARCtrl.Querymodel</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/nfdi4plants/ARCtrl.Querymodel</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="../../build/logo.png" Pack="true" PackagePath="\" />
+      <None Include="../../README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+</Project>

@@ -1,20 +1,28 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.3.32929.385
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11312.210 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Build", "build\Build.fsproj", "{E7F453CD-BCCA-42EF-96A2-C74B9A09A593}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E13D0F57-B0E0-4BAA-BD27-9136C8307BDA}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		.zenodo.json = .zenodo.json
 		.github\workflows\build-test.yml = .github\workflows\build-test.yml
 		build.cmd = build.cmd
+		Directory.Packages.props = Directory.Packages.props
+		.config\dotnet-tools.json = .config\dotnet-tools.json
 		global.json = global.json
 		LICENSE = LICENSE
 		.github\workflows\manage-issues.yml = .github\workflows\manage-issues.yml
+		package.json = package.json
+		src\Package.Metadata.props = src\Package.Metadata.props
+		pyproject.toml = pyproject.toml
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
+		tsconfig.json = tsconfig.json
+		vite.config.mts = vite.config.mts
 	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ARCtrl.QueryModel", "src\ARCtrl.QueryModel\ARCtrl.QueryModel.fsproj", "{1927F72B-180E-49C7-A189-96176E6067D3}"

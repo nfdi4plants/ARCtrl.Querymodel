@@ -352,3 +352,12 @@ MigrationBackup/
 **/TestResults/**
 tests/ARCtrl.Querymodel.Tests/playground_2.fsx
 /RELEASE_NOTES.md
+
+.venv
+/tests/**/js
+/tests/**/ts
+/tests/**/py
+
+src/ARCtrl.Querymodel/ts/
+src/ARCtrl.Querymodel/py/
+dist/

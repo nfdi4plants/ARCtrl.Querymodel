@@ -14,10 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
-    <ProjectReference Include="..\..\src\ARCtrl.Fragcess\ARCtrl.Fragcess.fsproj" />
-    <ProjectReference Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.fsproj" />
+    <PackageReference Include="Fable.Node" />
+    <PackageReference Include="Fable.Pyxpecto" />
+  </ItemGroup>  
+  
+  <ItemGroup>
+    <ProjectReference Condition="'$(FABLE_COMPILER)' != 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.fsproj" />
+    <ProjectReference Condition="'$(FABLE_COMPILER_JAVASCRIPT)' == 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.Javascript.fsproj" />
+    <ProjectReference Condition="'$(FABLE_COMPILER_TYPESCRIPT)' == 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.Javascript.fsproj" />
+    <ProjectReference Condition="'$(FABLE_COMPILER_PYTHON)' == 'true'" Include="..\..\src\ARCtrl.QueryModel\ARCtrl.QueryModel.Python.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -1,10 +1,10 @@
 ﻿module PackageTasks
 
-open ProjectInfo
-
 open MessagePrompts
 open BasicTasks
 open TestTasks
+open ProjectInfo
+open Helpers
 
 open BlackFox.Fake
 open Fake.Core
@@ -17,50 +17,43 @@ let private replaceCommitLink input =
     let commitLinkPattern = @"\[\[#[a-z0-9]*\]\(.*\)\] "
     Regex.Replace(input,commitLinkPattern,"")
 
-let pack = BuildTask.create "Pack" [clean; build; runTests] {
-    if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
-        then
-            !! "src/**/*.*proj"
-            -- "src/bin/*"
-            |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->
-                let msBuildParams =
-                    {p.MSBuildParams with 
-                        DisableInternalBinLog = true
-                        Properties = ([
-                            "Version",stableVersionTag
-                            "PackageReleaseNotes",  (release.Notes |> List.map replaceCommitLink |> String.concat "\r\n" )
-                        ] @ p.MSBuildParams.Properties)
-                    }
-                {
-                    p with 
-                        MSBuildParams = msBuildParams
-                        OutputPath = Some pkgDir
+module BundleDotNet =
+    let bundle (versionTag : string) (versionSuffix : string option) =
+        System.IO.Directory.CreateDirectory(ProjectInfo.netPkgDir) |> ignore
+        !! "src/*/*.fsproj"
+        -- "src/bin/*"
+        |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->           
+            let msBuildParams =
+                {p.MSBuildParams with 
+                    Properties = ([
+                        "Version",versionTag
+                        "PackageReleaseNotes",  (versionController.Notes |> List.map replaceCommitLink |> String.toLines )
+                    ] @ p.MSBuildParams.Properties)
+                    DisableInternalBinLog = true
                 }
-            ))
-    else failwith "aborted"
+            {
+                p with 
+                    VersionSuffix = versionSuffix
+                    MSBuildParams = msBuildParams
+                    OutputPath = Some ProjectInfo.netPkgDir
+            }
+        ))
+
+let packDotNet = BuildTask.create "PackDotNet" [clean; build; (*runTests*)] {
+    if versionController.IsPrerelease then
+        BundleDotNet.bundle versionController.NugetTag (Some versionController.NugetTag)
+    else 
+        BundleDotNet.bundle versionController.NugetTag None
 }
 
-let packPrerelease = BuildTask.create "PackPrerelease" [setPrereleaseTag; clean; build; runTests] {
-    if promptYesNo (sprintf "package tag will be %s OK?" prereleaseTag )
-        then 
-            !! "src/**/*.*proj"
-            -- "src/bin/*"
-            |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->
-                        let msBuildParams =
-                            {p.MSBuildParams with 
-                                DisableInternalBinLog = true
-                                Properties = ([
-                                    "Version", prereleaseTag
-                                    "PackageReleaseNotes",  (release.Notes |> List.map replaceCommitLink  |> String.toLines )
-                                ] @ p.MSBuildParams.Properties)
-                            }
-                        {
-                            p with 
-                                VersionSuffix = Some prereleaseSuffix
-                                OutputPath = Some pkgDir
-                                MSBuildParams = msBuildParams
-                        }
-            ))
-    else
-        failwith "aborted"
+let packJS = BuildTask.create "PackJS" [clean; build; transpileTS] {
+    Fake.JavaScript.Npm.exec "run build" id 
+    Fake.JavaScript.Npm.exec $"pack --pack-destination {ProjectInfo.npmPkgDir}" id 
 }
+
+let packPy = BuildTask.create "PackPy" [clean; build; transpilePy] {
+    // run python "-m poetry install --no-root" "."
+    run python $"-m uv build -o {ProjectInfo.pyPkgDir}" "."
+}
+
+let pack = BuildTask.createEmpty "Pack" [packDotNet; packJS; packPy]
