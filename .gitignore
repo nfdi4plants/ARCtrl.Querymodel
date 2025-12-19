@@ -355,6 +355,7 @@ tests/ARCtrl.Querymodel.Tests/playground_2.fsx
 
 .venv
 /tests/**/js
+/tests/**/ts
 /tests/**/py
 
 src/ARCtrl.Querymodel/ts/
