@@ -7,15 +7,66 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test-windows:
-    
-    runs-on: windows-latest
+  test:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+
+    # SETUP .NET
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 6.x.x
-    - name: Build and test
-      run: dotnet run --project ./build/Build.fsproj runtests
+        dotnet-version: 8.x.x
+    - name: Restore fable
+      run: dotnet tool restore
+
+    # SETUP NODE
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3
+      with:
+          node-version: 18
+    - name: install node modules
+      working-directory: ./
+      run: npm install --ignore-scripts
+    - name: esbuild postinstall
+      working-directory: ./
+      run: npm explore esbuild -- npm run postinstall
+
+    # SETUP PYTHON
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Setup Virtual Environment
+      run: python -m venv .venv
+    - name: Setup Poetry Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+          .\.venv\Scripts\python.exe -m pip install -U pip setuptools
+          .\.venv\Scripts\python.exe -m pip install uv
+          .\.venv\Scripts\python.exe -m uv pip install -r pyproject.toml --group dev
+    - name: Setup Poetry Unix
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          ./.venv/bin/python -m pip install -U pip setuptools
+          ./.venv/bin/python -m pip install uv
+          ./.venv/bin/python -m uv pip install -r pyproject.toml --group dev
+
+    # BUILD
+    - name: make script executable
+      if: matrix.os == 'ubuntu-latest'
+      run: chmod u+x build.sh
+    - name: Test (Unix)
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: ./
+      run: ./build.sh runtests --fail-on-focused-tests
+    - name: Test (Windows)
+      if: matrix.os == 'windows-latest'
+      run: .\build.cmd runtests --fail-on-focused-tests
