@@ -1,5 +1,8 @@
 ﻿module ARCtrl.QueryModel.FragmentSelector
 
+open ARCtrl.Helper.Regex.ActivePatterns
+open Fable.Core
+
 [<Literal>]
 let rowRegex = """(?<=row=)\d*$"""
 
@@ -18,11 +21,14 @@ let columnRangeRegex = """(?<=col=)(?<start>\d*)-(?<end>\d*)$"""
 [<Literal>]
 let cellRangeRegex = """(?<=cell=)(?<startRow>\d*),(?<startColumn>\d*)-(?<endRow>\d*),(?<endColumn>\d*)$"""
 
-let (|Regex|_|) pattern s = 
-    let r = System.Text.RegularExpressions.Regex.Match(s, pattern)
-    if r.Success then Some(r)
-    else None
+//ARCtrl.Helper.Regex.ActivePatterns.Regex
 
+//let (|Regex|_|) pattern s = 
+//    let r = System.Text.RegularExpressions.Regex.Match(s, pattern)
+//    if r.Success then Some(r)
+//    else None
+
+[<AttachMembers>]
 type CSV = 
     | Row of int
     | Column of int
