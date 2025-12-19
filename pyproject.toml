@@ -1,5 +1,5 @@
 [project]
-name = "arctrl_querymodel"
+name = "arcquerymodel"
 version = "3.0.0a1"
 description = "Library for graph-based querying of Annotated Research Contexts (ARCs)."
 authors = [

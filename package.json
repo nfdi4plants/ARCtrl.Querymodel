@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "@nfdi4plants/arctrl.querymodel",
+  "name": "@nfdi4plants/arcquerymodel",
   "version": "3.0.0-beta.15",
   "description": "Top level ARC DataModel and API function descriptions.",
   "repository": {
