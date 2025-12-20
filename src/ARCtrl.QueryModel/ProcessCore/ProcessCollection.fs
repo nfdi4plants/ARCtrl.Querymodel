@@ -1,17 +1,14 @@
 namespace rec ARCtrl.QueryModel.ProcessCore
 
 open ARCtrl
+open Fable.Core
 open ARCtrl.ROCrate
 open ARCtrl.QueryModel
-open System.Text.Json.Serialization
-open System.Text.Json
-open System.IO
-
 open System.Collections.Generic
-open System.Collections
 
 
 /// Type representing a queryable collection of processes, which model the experimental graph
+[<AttachMembers>]
 type ProcessSequence(processes : ResizeArray<QLabProcess>) =
        
     let mutable _processMap = 
@@ -66,7 +63,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         | Some ps -> 
             ProcessSequence.getProcesses(ps = ps).Processes        
             |> ResizeArray.collect (fun p -> 
-                [p.Input; p.Output]
+                ResizeArray.append p.Inputs p.Outputs
             )
             |> ResizeArray.distinct     
         | None ->
@@ -102,7 +99,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
                                 let p = ps.GetProcess(pn.Id)
                                 f p
                                 |> ResizeArray.iter (fun r -> result.Add r |> ignore)
-                                ResizeArray [p.Input]
+                                p.Inputs
                             else 
                                 ResizeArray []
                         )
@@ -131,7 +128,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
                                 let p = ps.GetProcess(pn.Id)
                                 f p
                                 |> ResizeArray.iter (fun r -> result.Add r |> ignore)
-                                ResizeArray [p.Output]
+                                p.Outputs
                             else 
                                 ResizeArray []
                         )
@@ -182,10 +179,10 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         |> ResizeArray.filter (fun n -> predicate n)
 
     static member getPreviousNodesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectBackwards (node, QLabProcess.input>>ResizeArray.singleton, ?ps = ps)
+        ProcessSequence.collectBackwards (node, QLabProcess.inputs, ?ps = ps)
 
     static member getSucceedingNodesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectForwards (node, QLabProcess.output>>ResizeArray.singleton, ?ps = ps)
+        ProcessSequence.collectForwards (node, QLabProcess.outputs, ?ps = ps)
 
     /// Returns the names of all nodes processSequence, which are connected to the given node and for which the predicate returns true
     static member getNodesOfBy (predicate : IONode -> bool, node : string, ?ps : ProcessSequence) =
@@ -196,35 +193,26 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     static member getRootInputsOfBy (predicate : IONode -> bool, node : string, ?ps : ProcessSequence) =
         let ps = ProcessSequence.getProcesses(?ps = ps)
         let f (p : QLabProcess) =
-            let input = QLabProcess.input p
-            if ProcessSequence.nodeIsRoot(input, ps) && predicate input then
-                ResizeArray.singleton input
-            else
-                ResizeArray()
+            QLabProcess.inputs p           
+            |> ResizeArray.filter (fun input ->
+                ProcessSequence.nodeIsRoot(input, ps) && predicate input
+            )
         ProcessSequence.collectBackwards(IONode(graph.GetNode(node)), f, ps = ps)
 
     /// Returns the final outputs of the assay, which point to no further nodes, which are connected to the given node and for which the predicate returns true
     static member getFinalOutputsOfBy (predicate : IONode -> bool, node : string, ?ps : ProcessSequence) =
         let ps = ProcessSequence.getProcesses(?ps = ps)
         let f (p : QLabProcess) =
-            let output = QLabProcess.output p
-            if ProcessSequence.nodeIsFinal(output, ps) && predicate output then
-                ResizeArray.singleton output
-            else
-                ResizeArray()
+            QLabProcess.outputs p
+            |> ResizeArray.filter (fun output ->
+                ProcessSequence.nodeIsFinal(output, ps) && predicate output
+            )
         ProcessSequence.collectForwards(IONode(graph.GetNode(node)), f, ps = ps)
        
     static member getValues (?ps : ProcessSequence) =
         let ps = ProcessSequence.getProcesses(?ps = ps)
         ps.Processes
-        |> ResizeArray.collect (fun p -> 
-            ResizeArray [
-                yield! p.Input.Characteristics
-                yield! p.ParameterValues
-                yield! p.Components
-                yield! p.Output.Factors            
-            ]
-        )
+        |> ResizeArray.collect (fun p -> p.Values)
         |> QValueCollection
 
     /// Returns the previous values of the given node
@@ -234,11 +222,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
             | Some pn when p.Protocol.IsSome && p.Protocol.Value.Name <> pn ->
                 ResizeArray []
             | _ ->
-                ResizeArray [
-                    yield! p.Input.Characteristics
-                    yield! p.ParameterValues
-                    yield! p.Output.Factors            
-                ]
+                p.Values
         ProcessSequence.collectBackwards(IONode(graph.GetNode(node)), f, ?ps = ps)
         |> QValueCollection
 
@@ -249,12 +233,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
             | Some pn when p.Protocol.IsSome && p.Protocol.Value.Name <> pn ->
                 ResizeArray []
             | _ ->
-                ResizeArray [
-                    yield! p.Input.Characteristics
-                    yield! p.ParameterValues
-                    yield! p.Components
-                    yield! p.Output.Factors            
-                ]
+                p.Values
         ProcessSequence.collectForwards(IONode(graph.GetNode(node)), f, ?ps = ps)
         |> QValueCollection
 
@@ -264,12 +243,7 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         |> ResizeArray.collect (fun p -> 
             match p.Protocol with
             | Some pt when pt.Name = protocolName ->
-                ResizeArray [
-                    yield! p.Input.Characteristics
-                    yield! p.ParameterValues
-                    yield! p.Components
-                    yield! p.Output.Factors            
-                ]
+                p.Values
             | _ -> ResizeArray []
         )
         |> QValueCollection
@@ -577,11 +551,11 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     member this.SucceedingComponentsOf(node : IONode, ?protocolName) =
             this.SucceedingValuesOf(node,?protocolName = protocolName).Components()
 
-    member this.Contains(ontology : OntologyAnnotation, ?protocolName) = 
-            this.Values(?protocolName = protocolName).Contains ontology
+    member this.ContainsByCategory(category : OntologyAnnotation, ?protocolName) = 
+            this.Values(?protocolName = protocolName).ContainsByCategory category
 
-    member this.Contains(name : string, ?protocolName) = 
-            this.Values(?protocolName = protocolName).Contains name
+    member this.ContainsByName(name : string, ?protocolName) = 
+            this.Values(?protocolName = protocolName).ContainsByName name
 
     /// Returns the names of all nodes in the Process sequence
     member this.Nodes =

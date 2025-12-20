@@ -3,50 +3,52 @@
 open ARCtrl
 open ARCtrl.ROCrate
 open ARCtrl.QueryModel
+open Fable.Core
 
 open System.Collections
 open System.Collections.Generic
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
+[<AttachMembers>]
 type QValueCollection(values : ResizeArray<QPropertyValue>) =
 
     //do values.[0].C
 
     /// Returns the nth Item in the collection
-    member this.Item(i : int)  = values.[i]
+    member this.GetAt(i : int)  = values.[i]
 
     /// Returns an Item in the collection with the given header name
-    member this.Item(category : string) =
+    member this.GetByName(category : string) =
         values 
         |> Seq.pick (fun v -> if v.Category.NameText = category then Some v else None)
 
     /// Returns an Item in the collection with the given header category
-    member this.Item(category : OntologyAnnotation) = 
+    member this.GetByCategory(category : OntologyAnnotation) = 
         values 
         |> Seq.pick (fun v -> if v.Category = category then Some v else None)
 
-    /// Returns an Item in the collection whichs header category is a child of the given parent category
-    member this.ItemWithParent(parentCategory : OntologyAnnotation) = 
-        values 
-        |> Seq.pick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+    ///// Returns an Item in the collection whichs header category is a child of the given parent category
+    //member this.ItemWithParent(parentCategory : OntologyAnnotation) = 
+    //    values 
+    //    |> Seq.pick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
 
     /// Returns the nth Item in the collection if it exists, else returns None
-    member this.TryItem(i : int)  = if values.Count > i then Some values.[i] else None
+    member this.TryGetAt(i : int)  = if values.Count > i then Some values.[i] else None
 
     /// Returns an Item in the collection with the given header name, else returns None
-    member this.TryItem(category : string) = 
+    member this.TryGetByName(category : string) = 
         values
         |> Seq.tryPick (fun v -> if v.Category.NameText = category then Some v else None)
 
     /// Returns an Item in the collection with the given header category, else returns None
-    member this.TryItem(category : OntologyAnnotation) = 
+    member this.TryGetByCategory(category : OntologyAnnotation) = 
         values 
         |> Seq.tryPick (fun v -> if v.Category = category then Some v else None)
 
-    /// Returns an Item in the collection whichs header category is a child of the given parent category, else returns None
-    member this.TryItemWithParent(parentCategory : OntologyAnnotation) = 
-        values 
-        |> Seq.tryPick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
+    ///// Returns an Item in the collection whichs header category is a child of the given parent category, else returns None
+    //member this.TryItemWithParent(parentCategory : OntologyAnnotation) = 
+    //    values 
+    //    |> Seq.tryPick (fun v -> if v.Category.IsChildTermOf(parentCategory) then Some v else None)
 
     /// Get the values as list
     member this.Values = values
@@ -128,11 +130,11 @@ type QValueCollection(values : ResizeArray<QPropertyValue>) =
     //member this.WithChildCategory(childCategory : OntologyAnnotation, ont : OboOntology) = 
     //    this.Filter (fun v -> childCategory.IsChildTermOf(v, ont))
 
-    /// Return a new QValueCollection with only those values, whichs header equals the given category or its parent categories
-    ///
-    /// Equivalency is deduced from isA relationships in the SwateAPI
-    member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
-        this.Filter (fun v -> v.IsChildTermOf(parentCategory))
+    ///// Return a new QValueCollection with only those values, whichs header equals the given category or its parent categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the SwateAPI
+    //member this.WithParentCategory(parentCategory : OntologyAnnotation) = 
+    //    this.Filter (fun v -> v.IsChildTermOf(parentCategory))
 
     ///// Return a new QValueCollection with only those values, whichs header equals the given category or its parent categories
     /////
@@ -152,20 +154,20 @@ type QValueCollection(values : ResizeArray<QPropertyValue>) =
         |> ResizeArray.distinctBy (fun v -> v.Category)
         |> QValueCollection
 
-    /// Returns true, if the QValueCollection contains a values, whichs header equals the given category or its child categories
-    ///
-    /// Equivalency is deduced from isA relationships in the SwateAPI
-    member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
-        values
-        |> Seq.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
+    ///// Returns true, if the QValueCollection contains a values, whichs header equals the given category or its child categories
+    /////
+    ///// Equivalency is deduced from isA relationships in the SwateAPI
+    //member this.ContainsChildOf(parentCategory : OntologyAnnotation) =
+    //    values
+    //    |> Seq.exists (fun v -> v.Category.IsChildTermOf(parentCategory))
 
     /// Returns true, if the QValueCollection contains a values, whichs header equals the given category
-    member this.Contains(category : OntologyAnnotation) =
+    member this.ContainsByCategory(category : OntologyAnnotation) =
         values
         |> Seq.exists (fun v -> v.Category = category)
 
     /// Returns true, if the QValueCollection contains a values, whichs headername equals the given category
-    member this.Contains(name : string) =
+    member this.ContainsByName(name : string) =
         values
         |> Seq.exists (fun v -> v.NameText = name)
 
@@ -177,37 +179,34 @@ type QValueCollection(values : ResizeArray<QPropertyValue>) =
 
     static member (@) (ps1 : QValueCollection,ps2 : QValueCollection) = ResizeArray.append ps1.Values ps2.Values |> QValueCollection
 
-[<AutoOpen>]
-module QValueCollectionExtensions =
 
-    type QValueCollection with
+    /// Return the number of values in the collection
+    member this.IsEmpty = this.Values.Count = 0
 
-        /// Return the number of values in the collection
-        member this.IsEmpty = this.Values.Count = 0
+    /// Return the number of values in the collection
+    member this.Length = this.Values.Count
 
-        /// Return the number of values in the collection
-        member this.Length = this.Values.Count
+    /// Return first ISAValue in collection
+    member this.First = this.Values.[0]
 
-        /// Return first ISAValue in collection
-        member this.First = this.Values.[0]
+    /// Return first ISAValue in collection if it exists, else returns None
+    member this.TryFirst = if this.IsEmpty then None else Some this.First
 
-        /// Return first ISAValue in collection if it exists, else returns None
-        member this.TryFirst = if this.IsEmpty then None else Some this.First
-
-        /// Return first ISAValue in collection
-        member this.Last = this.Values.[this.Length - 1]
+    /// Return first ISAValue in collection
+    member this.Last = this.Values.[this.Length - 1]
 
 /// Contains queryable ISAValues (Parameters, Factors, Characteristics)
+[<AttachMembers>]
 type IOQValueCollection(values : KeyValuePair<string*string,QPropertyValue> ResizeArray) =
 
     /// Returns the nth Item in the collection
-    member this.Item(i : int)  = values.[i]
+    member this.GetAt(i : int)  = values.[i]
 
-    member this.Item(category : string) = values |> Seq.pick (fun kv -> if kv.Value.NameText = category then Some kv.Key else None)
+    member this.GetByName(name : string) = values |> Seq.pick (fun kv -> if kv.Value.NameText = name then Some kv.Key else None)
 
-    member this.Item(ioKey : string*string) = values |> Seq.pick (fun kv -> if ioKey = kv.Key then Some kv.Value else None)
+    member this.GetByIOName(ioKey : string*string) = values |> Seq.pick (fun kv -> if ioKey = kv.Key then Some kv.Value else None)
 
-    member this.Item(category : OntologyAnnotation) = values |> Seq.pick (fun kv -> if kv.Value.Category = category then Some kv.Key else None)
+    member this.GetByCategory(category : OntologyAnnotation) = values |> Seq.pick (fun kv -> if kv.Value.Category = category then Some kv.Key else None)
 
     member this.WithInput(inp : string) = 
         values 

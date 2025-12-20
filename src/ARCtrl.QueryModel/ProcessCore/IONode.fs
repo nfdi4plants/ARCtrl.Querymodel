@@ -1,9 +1,11 @@
 ﻿namespace ARCtrl.QueryModel.ProcessCore
 
+open Fable.Core
 open ARCtrl
 open ARCtrl.ROCrate
 open ARCtrl.QueryModel
 
+[<AttachMembers>]
 type IONode(node : LDNode) as this =
 
     inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)

@@ -1,5 +1,6 @@
 ﻿namespace ARCtrl.QueryModel.ProcessCore
 
+open Fable.Core
 open ARCtrl
 open ARCtrl.ROCrate
 open ARCtrl.QueryModel
@@ -7,6 +8,7 @@ open ARCtrl.QueryModel
 open System.Collections
 open System.Collections.Generic
 
+[<AttachMembers>]
 type QLabProtocol(node : LDNode) as this = 
 
    inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)

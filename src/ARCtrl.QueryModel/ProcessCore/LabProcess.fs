@@ -1,12 +1,14 @@
 ﻿namespace ARCtrl.QueryModel.ProcessCore
 
 open ARCtrl
+open Fable.Core
 open ARCtrl.ROCrate
 open ARCtrl.QueryModel
 
 open System.Collections
 open System.Collections.Generic
 
+[<AttachMembers>]
 type QLabProcess(node : LDNode) as this = 
 
    inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
@@ -15,43 +17,41 @@ type QLabProcess(node : LDNode) as this =
             failwithf "The provided node with id %s is not a valid Process" node.Id
         node.DeepCopyPropertiesTo(this)
 
-    static member input (labProcess : QLabProcess) =
-        LDLabProcess.getObjects(labProcess, context = context)
-        |> Seq.exactlyOne
-        |> IONode
+    static member inputs (labProcess : QLabProcess) =
+        LDLabProcess.getObjects(labProcess, graph = graph, context = context)
+        |> ResizeArray.map IONode
 
-    static member output (labProcess : QLabProcess) =
-        LDLabProcess.getResults(labProcess, context = context)
-        |> Seq.exactlyOne
-        |> IONode
+    static member outputs (labProcess : QLabProcess) =
+        LDLabProcess.getResults(labProcess, graph = graph, context = context)
+        |> ResizeArray.map IONode
 
-    static member inputName (labProcess : QLabProcess) =
-        let input = QLabProcess.input labProcess
-        LDSample.getNameAsString(input, context = context)
+    static member inputNames (labProcess : QLabProcess) =
+        let inputs = QLabProcess.inputs labProcess
+        inputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, context = context))
 
-    static member outputName (labProcess : QLabProcess) =
-        let output = QLabProcess.output labProcess
-        LDSample.getNameAsString(output, context = context)
+    static member outputNames (labProcess : QLabProcess) =
+        let outputs = QLabProcess.outputs labProcess
+        outputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, context = context))
 
-    static member inputType (labProcess : QLabProcess)  =
-        let input = QLabProcess.input labProcess
-        input.SchemaType
+    static member inputTypes (labProcess : QLabProcess)  =
+        let inputs = QLabProcess.inputs labProcess
+        inputs |> ResizeArray.map (fun i -> i.SchemaType)
 
-    static member outputType (labProcess : QLabProcess) =
-        let output = QLabProcess.output labProcess
-        output.SchemaType
+    static member outputTypes (labProcess : QLabProcess) =
+        let outputs = QLabProcess.outputs labProcess
+        outputs |> ResizeArray.map (fun i -> i.SchemaType)
 
-    member this.Input = QLabProcess.input this
+    member this.Inputs = QLabProcess.inputs this
 
-    member this.Output = QLabProcess.output this
+    member this.Outputs = QLabProcess.outputs this
 
-    member this.InputName = QLabProcess.inputName this
+    member this.InputNames = QLabProcess.inputNames this
 
-    member this.OutputName = QLabProcess.outputName this
+    member this.OutputNames = QLabProcess.outputNames this
 
-    member this.InputType = QLabProcess.inputType this
+    member this.InputTypes = QLabProcess.inputTypes this
 
-    member this.OutputType = QLabProcess.outputType this
+    member this.OutputTypes = QLabProcess.outputTypes this
 
     member this.ParameterValues =
         LDLabProcess.getParameterValues(this, context = context)
@@ -67,13 +67,18 @@ type QLabProcess(node : LDNode) as this =
             protocolNode.Components
         | None -> ResizeArray()
 
-    member this.GetNextProcesses() =    
-        this.Input.ObjectOf()
+    member this.GetNextProcesses() =
+        this.Inputs
+        |> ResizeArray.collect (fun ioNode -> ioNode.ObjectOf())
+        |> ResizeArray.distinctBy (fun p -> p.Id)
 
     member this.GetPreviousProcesses() =
-        this.Output.ResultOf()
+        this.Outputs
+        |> ResizeArray.collect (fun ioNode -> ioNode.ResultOf())
+        |> ResizeArray.distinctBy (fun p -> p.Id)
 
     member this.Values = 
-        this.Input.Characteristics
-        |> ResizeArray.append this.Output.Characteristics
+        (this.Inputs |> ResizeArray.collect (fun i -> i.Characteristics))
+        |> ResizeArray.append (this.Outputs |> ResizeArray.collect (fun o -> o.Factors))
         |> ResizeArray.append this.ParameterValues
+        |> ResizeArray.append this.Components
