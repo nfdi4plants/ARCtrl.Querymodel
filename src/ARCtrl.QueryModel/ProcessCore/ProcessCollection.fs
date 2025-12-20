@@ -214,23 +214,21 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
     /// Returns the initial inputs final outputs of the assay, to which no processPoints, which are connected to the given node and for which the predicate returns true
     static member getRootInputsOfBy (predicate : IONode -> bool, node : IONode, ?ps : ProcessSequence) =
-        let ps = ProcessSequence.getProcesses(?ps = ps)
         let f (p : QLabProcess) =
             QLabProcess.inputs p           
             |> ResizeArray.filter (fun input ->
-                ProcessSequence.nodeIsRoot(input, ps) && predicate input
+                ProcessSequence.nodeIsRoot(input, ?ps = ps) && predicate input
             )
-        ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), f, ps = ps)
+        ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
 
     /// Returns the final outputs of the assay, which point to no further nodes, which are connected to the given node and for which the predicate returns true
     static member getFinalOutputsOfBy (predicate : IONode -> bool, node : IONode, ?ps : ProcessSequence) =
-        let ps = ProcessSequence.getProcesses(?ps = ps)
         let f (p : QLabProcess) =
             QLabProcess.outputs p
             |> ResizeArray.filter (fun output ->
-                ProcessSequence.nodeIsFinal(output, ps) && predicate output
+                ProcessSequence.nodeIsFinal(output, ?ps = ps) && predicate output
             )
-        ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), f, ps = ps)
+        ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
        
     static member getValues (?ps : ProcessSequence) =
         let ps = ProcessSequence.getProcesses(?ps = ps)
@@ -508,7 +506,15 @@ type QLabProcess(node : LDNode) as this =
     do 
         if LDLabProcess.validate(node, context = context) |> not then
             failwithf "The provided node with id %s is not a valid Process" node.Id
-        node.DeepCopyPropertiesTo(this)
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+        //node.DeepCopyPropertiesTo(this)
+
+    static member name (labProcess : QLabProcess) =
+        LDLabProcess.getNameAsString(labProcess, context = context)
 
     static member inputs (labProcess : QLabProcess) =
         LDLabProcess.getObjects(labProcess, graph = graph, context = context)
@@ -533,6 +539,9 @@ type QLabProcess(node : LDNode) as this =
     static member outputTypes (labProcess : QLabProcess) =
         let outputs = QLabProcess.outputs labProcess
         outputs |> ResizeArray.map (fun i -> i.SchemaType)
+
+    member this.Name = 
+        QLabProcess.name this
 
     member this.Inputs = QLabProcess.inputs this
 
@@ -595,8 +604,13 @@ type IONode(node : LDNode) as this =
 
     inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
 
-    do         
-        node.DeepCopyPropertiesTo(this)
+    do        
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+        //node.DeepCopyPropertiesTo(this)
 
     member this.Name : string = LDSample.getNameAsString(this, context = context)
 

@@ -15,7 +15,12 @@ type QLabProtocol(node : LDNode) as this =
     do 
         if LDLabProtocol.validate(node, context = context) |> not then
             failwithf "The provided node with id %s is not a valid Process" node.Id
-        node.DeepCopyPropertiesTo(this)
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+        //node.DeepCopyPropertiesTo(this)
 
     static member name (labProtocol : QLabProtocol) =
         LDLabProtocol.getNameAsString(labProtocol, context = context)
