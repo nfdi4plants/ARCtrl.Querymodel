@@ -21,7 +21,7 @@ type QLabProtocol(node : LDNode) as this =
         LDLabProtocol.getNameAsString(labProtocol, context = context)
 
     static member components (labProtocol : QLabProtocol) =
-        LDLabProtocol.getComponents(labProtocol, context = context)
+        LDLabProtocol.getComponents(labProtocol, graph = graph, context = context)
         |> ResizeArray.map (fun cvNode -> QPropertyValue(cvNode))
 
     member this.Name = 

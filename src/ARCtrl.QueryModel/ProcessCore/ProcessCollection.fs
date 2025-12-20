@@ -73,7 +73,9 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
             |> ResizeArray.collect (fun p -> 
                 ResizeArray.append p.Inputs p.Outputs
             )
-            |> ResizeArray.distinct     
+            //|> ResizeArray.distinct     
+            |> Seq.distinct
+            |> ResizeArray
         | None ->
             graph.Nodes
             |> ResizeArray.choose (fun n -> 
@@ -146,12 +148,16 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
     static member getPreviousProcessesOf (node : IONode, ?ps : ProcessSequence) =
         ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
-        |> ResizeArray.distinct
+        //|> ResizeArray.distinct
+        |> Seq.distinct
+        |> ResizeArray
         |> ProcessSequence
 
     static member getSucceedingProcessesOf (node : IONode, ?ps : ProcessSequence) =
         ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
-        |> ResizeArray.distinct
+        //|> ResizeArray.distinct
+        |> Seq.distinct
+        |> ResizeArray
         |> ProcessSequence
 
     /// Returns a new process sequence, only with those rows that contain either an educt or a product entity of the given node (or entity)
@@ -161,7 +167,9 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         let backwardProcesses = 
             ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
         ResizeArray.append forwardProcesses backwardProcesses
-        |> ResizeArray.distinct
+        //|> ResizeArray.distinct
+        |> Seq.distinct
+        |> ResizeArray
         |> ProcessSequence
 
     /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints
@@ -493,152 +501,6 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     member this.LastData = 
         ProcessSequence.getFinalOutputsBy ((fun (io : IONode) -> io.IsFile),this)
 
-///// One Node of an ISA Process Sequence (Source, Sample, Data)
-//type IONode(name : string, ioType : IOType, ?parentProcessSequence : ProcessSequence) =
-    
-//    member this.DataContext = 
-//        if ioType.isData then 
-//            match DataContext.tryGetDataContextByName name with
-//            | Some dc -> 
-//                DataContext(?id = dc.ID, name = name, ?format = dc.Format, ?selectorFormat = dc.SelectorFormat, ?explication = dc.Explication, ?unit = dc.Unit, ?objectType = dc.ObjectType, ?label = dc.Label, ?description = dc.Description, ?generatedBy = dc.GeneratedBy, comments = dc.Comments)
-//                |> Some
-//            | None -> Some (DataContext(name = name))
-//        else 
-//            None
-
-//    member this.FilePath = 
-//        if ioType.isData then 
-//            this.DataContext.Value.FilePath.Value
-//        else 
-//            ""
-
-//    member this.Selector = 
-//        if ioType.isData then 
-//            this.DataContext.Value.Selector
-//        else 
-//            None
-
-//    /// Returns the process sequence in which the node appears
-//    member this.ParentProcessSequence = parentProcessSequence |> Option.defaultValue (ProcessSequence(ResizeArray []))
-
-//    /// Identifying name of the node
-//    member this.Name = name
-
-//    /// Type of node (source, sample, data, raw data ...)
-//    member this.IOType : IOType = ioType
-
-//    interface System.IEquatable<IONode> with
-//        member this.Equals other = other.Name.Equals this.Name
-
-//    override this.Equals other =
-//        match other with
-//        | :? IONode as p -> (this :> System.IEquatable<_>).Equals p
-//        | _ -> false
-
-//    override this.GetHashCode () = this.Name.GetHashCode()
-
-//    interface System.IComparable with
-//        member this.CompareTo other =
-//            match other with
-//            | :? IONode as p -> (this :> System.IComparable<_>).CompareTo p
-//            | _ -> -1
-
-//    interface System.IComparable<IONode> with
-//        member this.CompareTo other = other.Name.CompareTo this.Name
-
-//    /// Returns true, if the node is a source
-//    member this.isSource = this.IOType.isSource
-
-//    /// Returns true, if the node is a sample
-//    member this.isSample = this.IOType.isSample
-    
-//    /// Returns true, if the node is a data
-//    member this.isData = this.IOType.isData
-
-//    /// Returns true, if the node is a material
-//    member this.isMaterial = this.IOType.isMaterial
-
-
-//[<AutoOpen>]
-//module IONodeExtensions =
-
-//    type IONode with
-
-//        /// Returns all other nodes in the process sequence, that are connected to this node
-//        member this.Nodes = this.ParentProcessSequence.NodesOf(this)
-
-//        /// Returns all other nodes in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-//        member this.FirstNodes = this.ParentProcessSequence.FirstNodesOf(this)
-
-//        /// Returns all other nodes in the process sequence, that are connected to this node and have no more sink nodes they point to
-//        member this.LastNodes = this.ParentProcessSequence.LastNodesOf(this)
-
-//        /// Returns all other samples in the process sequence, that are connected to this node
-//        member this.Samples = this.ParentProcessSequence.SamplesOf(this)
-
-//        /// Returns all other samples in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-//        member this.FirstSamples = this.ParentProcessSequence.FirstSamplesOf(this)
-        
-//        /// Returns all other samples in the process sequence, that are connected to this node and have no more sink nodes they point to
-//        member this.LastSamples = this.ParentProcessSequence.LastSamplesOf(this)
-
-//        /// Returns all other sources in the process sequence, that are connected to this node
-//        member this.Sources = this.ParentProcessSequence.SourcesOf(this)
-
-//        /// Returns all other data in the process sequence, that are connected to this node
-//        member this.Data = this.ParentProcessSequence.FirstDataOf(this)
-
-//        /// Returns all other data in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-//        member this.FirstData = this.ParentProcessSequence.FirstDataOf(this)
-
-//        /// Returns all other data in the process sequence, that are connected to this node and have no more sink nodes they point to
-//        member this.LastData = this.ParentProcessSequence.LastNodesOf(this)
-
-//        /// Returns all values in the process sequence, that are connected to this given node
-//        member this.Values = this.ParentProcessSequence.ValuesOf(this)
-
-//        /// Returns all values in the process sequence, that are connected to this given node and come before it in the sequence
-//        member this.PreviousValues = this.ParentProcessSequence.PreviousValuesOf(this)
-
-//        /// Returns all values in the process sequence, that are connected to the given node and come after it in the sequence
-//        member this.SucceedingValues = this.ParentProcessSequence.SucceedingValuesOf(this)
-
-//        /// Returns all characteristic values in the process sequence, that are connected to the given node
-//        member this.Characteristics = this.ParentProcessSequence.CharacteristicsOf(this)
-
-//        /// Returns all characteristic values in the process sequence, that are connected to the given node and come before it in the sequence
-//        member this.PreviousCharacteristics = this.ParentProcessSequence.PreviousCharacteristicsOf(this)
-
-//        /// Returns all characteristic values in the process sequence, that are connected to the given node and come after it in the sequence
-//        member this.SucceedingCharacteristics = this.ParentProcessSequence.SucceedingCharacteristicsOf(this)
-
-//        /// Returns all parameter values in the process sequence, that are connected to the given node
-//        member this.Parameters = this.ParentProcessSequence.ParametersOf(this)
-
-//        /// Returns all parameter values in the process sequence, that are connected to the given node and come before it in the sequence
-//        member this.PreviousParameters = this.ParentProcessSequence.PreviousParametersOf(this)
-
-//        /// Returns all parameter values in the process sequence, that are connected to the given node and come after it in the sequence
-//        member this.SucceedingParameters = this.ParentProcessSequence.SucceedingParametersOf(this)
-
-//        /// Returns all factor values in the process sequence, that are connected to the given node
-//        member this.Factors = this.ParentProcessSequence.FactorsOf(this)
-
-//        /// Returns all factor values in the process sequence, that are connected to the given node and come before it in the sequence
-//        member this.PreviousFactors = this.ParentProcessSequence.PreviousFactorsOf(this)
-
-//        /// Returns all factor values in the process sequence, that are connected to the given node and come after it in the sequence
-//        member this.SucceedingFactors = this.ParentProcessSequence.SucceedingFactorsOf(this)
-
-//        /// Returns all component values in the process sequence, that are connected to the given node
-//        member this.Components = this.ParentProcessSequence.ComponentsOf(this)
-
-//        /// Returns all component values in the process sequence, that are connected to the given node and come before it in the sequence
-//        member this.PreviousComponents = this.ParentProcessSequence.PreviousComponentsOf(this)
-
-//        /// Returns all component values in the process sequence, that are connected to the given node and come after it in the sequence
-//        member this.SucceedingComponents = this.ParentProcessSequence.SucceedingComponentsOf(this)
-
 [<AttachMembers>]
 type QLabProcess(node : LDNode) as this = 
 
@@ -685,11 +547,11 @@ type QLabProcess(node : LDNode) as this =
     member this.OutputTypes = QLabProcess.outputTypes this
 
     member this.ParameterValues =
-        LDLabProcess.getParameterValues(this, context = context)
+        LDLabProcess.getParameterValues(this, graph = graph, context = context)
         |> ResizeArray.map (fun pvNode -> QPropertyValue(pvNode))
 
     member this.Protocol : QLabProtocol option = 
-        LDLabProcess.tryGetExecutesLabProtocol(this, context = context)
+        LDLabProcess.tryGetExecutesLabProtocol(this, graph = graph, context = context)
         |> Option.map (fun (lpNode : LDNode) -> QLabProtocol(lpNode))
 
     member this.Components = 
@@ -701,12 +563,17 @@ type QLabProcess(node : LDNode) as this =
     member this.GetNextProcesses() =
         this.Inputs
         |> ResizeArray.collect (fun ioNode -> ioNode.ObjectOf())
-        |> ResizeArray.distinctBy (fun (p : LDNode) -> p.Id)
+        //|> ResizeArray.distinctBy (fun (p : LDNode) -> p.Id)
+        |> Seq.distinctBy (fun (p : LDNode) -> p.Id)
+        |> ResizeArray
+
 
     member this.GetPreviousProcesses() =
         this.Outputs
         |> ResizeArray.collect (fun ioNode -> ioNode.ResultOf())
-        |> ResizeArray.distinctBy (fun (p : LDNode) -> p.Id)
+        //|> ResizeArray.distinctBy (fun (p : LDNode) -> p.Id)
+        |> Seq.distinctBy (fun (p : LDNode) -> p.Id)
+        |> ResizeArray
 
     member this.Values = 
         (this.Inputs |> ResizeArray.collect (fun i -> i.Characteristics))

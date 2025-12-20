@@ -30,7 +30,9 @@ module KnowledgeGraph =
                     let objectOfs = inputNode.GetPropertyValues(objectOf, context = context)
                     objectOfs.Add(LDRef(n.Id))
                     objectOfs
-                    |> ResizeArray.distinct
+                    //|> ResizeArray.distinct
+                    |> Seq.distinct
+                    |> ResizeArray
                     |> fun v -> inputNode.SetProperty(objectOf, v, context = context)  
                 )
                 outputs
@@ -38,7 +40,9 @@ module KnowledgeGraph =
                     let resultOfs = outputNode.GetPropertyValues(resultOf, context = context)
                     resultOfs.Add(LDRef(n.Id))
                     resultOfs
-                    |> ResizeArray.distinct
+                    //|> ResizeArray.distinct
+                    |> Seq.distinct
+                    |> ResizeArray
                     |> fun v -> outputNode.SetProperty(resultOf, v, context = context)
                 )   
         )

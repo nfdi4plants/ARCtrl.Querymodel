@@ -1,2 +1,5 @@
-export { QNode } from './ts/ArcTables.js'
-export { ValueCollection } from './ts/ValueCollection.js'
+export { indexGraph } from './ts/ProcessCore/KnowledgeGraph.js'
+export { ProcessSequence, QLabProcess, IONode } from './ts/ProcessCore/ProcessCollection.js'
+export { QLabProtocol } from './ts/ProcessCore/QLabProtocol.js'
+export { QValueCollection, IOQValueCollection } from './ts/ProcessCore/ValueCollection.js'
+export { QPropertyValue } from './ts/ProcessCore/PropertyValue.js'

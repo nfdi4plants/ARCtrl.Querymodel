@@ -11,6 +11,8 @@
     <None Include="ARCtrl.QueryModel.Python.fsproj" />
     <None Include="ARCtrl.QueryModel.Javascript.fsproj" />
     <None Include="ARCtrl.QueryModel.Common.props" />
+    <None Include="index.ts" />
+    <None Include="__init__.py" />
     <Compile Include="ResizeArray.fs" />
     <Compile Include="OntologyAnnotation.fs" />
     <Compile Include="FragmentSelector.fs" />
