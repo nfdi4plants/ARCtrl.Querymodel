@@ -59,3 +59,11 @@ type QPropertyValue(node : LDNode) as this =
         match this.TryUnitText with
         | Some unitText -> $"{this.ValueText} {unitText}"
         | None -> this.ValueText
+
+    override this.GetHashCode () : int =
+        this.Id.GetHashCode()
+
+    override this.Equals(obj: obj): bool =
+        match obj with
+        | :? QPropertyValue as other -> this.Id = other.Id
+        | _ -> false

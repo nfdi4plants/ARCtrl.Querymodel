@@ -29,3 +29,11 @@ type QLabProtocol(node : LDNode) as this =
 
     member this.Components = 
         QLabProtocol.components this
+
+    override this.GetHashCode () : int = 
+        this.Id.GetHashCode()
+
+    override this.Equals(obj: obj) : bool =
+        match obj with
+        | :? QLabProtocol as other -> this.Id = other.Id
+        | _ -> false
