@@ -6,11 +6,9 @@ open ARCtrl.ROCrate
 open ARCtrl.QueryModel
 open System.Collections.Generic
 
-
-/// Type representing a queryable collection of processes, which model the experimental graph
 [<AttachMembers>]
 type ProcessSequence(processes : ResizeArray<QLabProcess>) =
-       
+    
     let mutable _processMap = 
         Dictionary<string, QLabProcess>()
         |> fun d -> 
@@ -31,18 +29,78 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     member this.GetProcess(id : string) =
         _processMap.[id]
 
-    static member getProcesses(?ps : ProcessSequence) = 
-        match ps with
-        | Some ps -> ps
-        | None -> 
-            graph.Nodes
-            |> ResizeArray.choose (fun n -> 
-                if LDLabProcess.validate(n, context = context) then
-                    Some (QLabProcess(n))
-                else
-                    None
+    //static member getProcesses(?ps : ProcessSequence) = 
+    //    match ps with
+    //    | Some ps -> ps
+    //    | None -> 
+    //        graph.Nodes
+    //        |> ResizeArray.choose (fun n -> 
+    //            if LDLabProcess.validate(n, context = context) then
+    //                Some (QLabProcess(n))
+    //            else
+    //                None
+    //        )
+    //        |> ProcessSequence
+
+
+/// Type representing a queryable collection of processes, which model the experimental graph
+[<AttachMembers>]
+type QGraph(inGraph : LDGraph) as this =
+       
+    inherit LDGraph(?id = inGraph.Id, nodes = inGraph.Nodes, ?context = inGraph.TryGetContext())
+
+    let mutable context = 
+        match this.TryGetContext() with
+        | Some c -> c
+        | None ->
+            LDContext(
+                baseContexts = ResizeArray[
+                    Context.initBioschemasContext()
+                    Context.initV1_2()
+                ]
             )
-            |> ProcessSequence
+
+    do 
+        this.Nodes
+        |> Seq.iter (fun n ->
+            if LDLabProcess.validate(n, context = context) then
+                let inputs = LDLabProcess.getObjects(n, graph = this, context = context)
+                let outputs = LDLabProcess.getResults(n, graph = this, context = context)
+                inputs
+                |> Seq.iter (fun inputNode ->
+                    let objectOfs = inputNode.GetPropertyValues(objectOf, context = context)
+                    objectOfs.Add(LDRef(n.Id))
+                    objectOfs
+                    //|> ResizeArray.distinct
+                    |> Seq.distinct
+                    |> ResizeArray
+                    |> fun v -> inputNode.SetProperty(objectOf, v, context = context)  
+                )
+                outputs
+                |> Seq.iter (fun outputNode ->
+                    let resultOfs = outputNode.GetPropertyValues(resultOf, context = context)
+                    resultOfs.Add(LDRef(n.Id))
+                    resultOfs
+                    //|> ResizeArray.distinct
+                    |> Seq.distinct
+                    |> ResizeArray
+                    |> fun v -> outputNode.SetProperty(resultOf, v, context = context)
+                )   
+        )
+
+    member this.ProcessSequence = 
+        this.Nodes
+        |> ResizeArray.choose (fun n -> 
+            if LDLabProcess.validate(n, context = context) then
+                Some (QLabProcess(n, parentGraph = this))
+            else
+                None
+        )
+        |> ProcessSequence
+
+    member this.Context
+        with get() = context
+        and set(v) = context <- v
 
     static member nodeIsRoot (node : IONode, ?ps : ProcessSequence) =
         match ps with
@@ -53,6 +111,8 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         | None ->
             node.ResultOf()
             |> Seq.isEmpty
+
+
 
     static member nodeIsFinal (node : IONode, ?ps : ProcessSequence) =
         match ps with
@@ -66,10 +126,10 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
 
     /// Returns the list of all nodes (sources, samples, data) in the ProcessSequence
-    static member getNodes (?ps : ProcessSequence) =
+    static member getNodes (graph : QGraph, ?ps : ProcessSequence) =
         match ps with
         | Some ps -> 
-            ProcessSequence.getProcesses(ps = ps).Processes        
+            ps.Processes        
             |> ResizeArray.collect (fun p -> 
                 ResizeArray.append p.Inputs p.Outputs
             )
@@ -79,9 +139,9 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         | None ->
             graph.Nodes
             |> ResizeArray.choose (fun n -> 
-                if LDSample.validate(n, context = context) then
+                if LDSample.validate(n, context = graph.Context) then
                     Some (IONode(n))
-                elif LDFile.validate(n, context = context) then
+                elif LDFile.validate(n, context = graph.Context) then
                     Some (IONode(n))
                 else
                     None
@@ -89,8 +149,8 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
 
 
-    static member collectBackwards (node : IONode, f:QLabProcess -> ResizeArray<'A>,?ps : ProcessSequence) : ResizeArray<'A> = 
-        let ps = ProcessSequence.getProcesses(?ps = ps)
+    static member collectBackwards (node : IONode, f:QLabProcess -> ResizeArray<'A>, graph : QGraph, ?ps : ProcessSequence) : ResizeArray<'A> = 
+        let ps = ps |> Option.defaultValue (graph.ProcessSequence)
         let resultNodes = HashSet<IONode>()
         let result = HashSet<'A>()
         let rec loop (toCheck : ResizeArray<IONode>) =
@@ -118,8 +178,8 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         loop (ResizeArray [node])
 
 
-    static member collectForwards (node : IONode, f:QLabProcess -> ResizeArray<'A>,?ps : ProcessSequence) : ResizeArray<'A> = 
-        let ps = ProcessSequence.getProcesses(?ps = ps)
+    static member collectForwards (node : IONode, f:QLabProcess -> ResizeArray<'A>, graph : QGraph, ?ps : ProcessSequence) : ResizeArray<'A> = 
+        let ps = ps |> Option.defaultValue (graph.ProcessSequence)
         let resultNodes = HashSet<IONode>()
         let result = HashSet<'A>()
         let rec loop (toCheck : ResizeArray<IONode>) =
@@ -146,26 +206,26 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
                 |> loop
         loop (ResizeArray [node])
 
-    static member getPreviousProcessesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
+    static member getPreviousProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         //|> ResizeArray.distinct
         |> Seq.distinct
         |> ResizeArray
         |> ProcessSequence
 
-    static member getSucceedingProcessesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
+    static member getSucceedingProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         //|> ResizeArray.distinct
         |> Seq.distinct
         |> ResizeArray
         |> ProcessSequence
 
     /// Returns a new process sequence, only with those rows that contain either an educt or a product entity of the given node (or entity)
-    static member getProcessesOf (node : IONode, ?ps : ProcessSequence) =
+    static member getProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
         let forwardProcesses = 
-            ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
+            QGraph.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         let backwardProcesses = 
-            ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, ?ps = ps)
+            QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         ResizeArray.append forwardProcesses backwardProcesses
         //|> ResizeArray.distinct
         |> Seq.distinct
@@ -173,99 +233,99 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
         |> ProcessSequence
 
     /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints
-    static member getRootInputs (?ps : ProcessSequence) =
-        let ps = ProcessSequence.getProcesses(?ps = ps)
-        let f n = ProcessSequence.nodeIsRoot(n, ps = ps)
-        ProcessSequence.getNodesBy(f, ps = ps)
+    static member getRootInputs (graph : QGraph, ?ps : ProcessSequence) =
+        let f n = QGraph.nodeIsRoot(n, ?ps = ps)
+        QGraph.getNodesBy(f, graph = graph, ?ps = ps)
 
     /// Returns the names of all final outputs of the processSequence, which point to no further nodes
-    static member getFinalOutputs (?ps : ProcessSequence) =
-        let ps = ProcessSequence.getProcesses(?ps = ps)
-        let f n = ProcessSequence.nodeIsFinal(n, ps = ps)
-        ProcessSequence.getNodesBy(f, ps = ps)
+    static member getFinalOutputs (graph : QGraph, ?ps : ProcessSequence) =
+        let f n = QGraph.nodeIsFinal(n, ?ps = ps)
+        QGraph.getNodesBy(f, graph = graph, ?ps = ps)
 
     /// Returns the names of all nodes for which the predicate returns true
-    static member getNodesBy (predicate : IONode -> bool, ?ps : ProcessSequence) =
-        ProcessSequence.getNodes(?ps = ps)
+    static member getNodesBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.getNodes(graph = graph, ?ps = ps)
         |> ResizeArray.filter (fun n -> predicate n)
 
 
     /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints, and for which the predicate returns true
-    static member getRootInputsBy (predicate : IONode -> bool,?ps : ProcessSequence) =
-        ProcessSequence.getRootInputs(?ps = ps)
+    static member getRootInputsBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.getRootInputs(graph = graph, ?ps = ps)
         |> ResizeArray.filter (fun n -> predicate n)
 
     /// Returns the names of all final outputs of the processSequence, which point to no further nodes, and for which the predicate returns true
-    static member getFinalOutputsBy (predicate : IONode -> bool,?ps : ProcessSequence) =
-        ProcessSequence.getFinalOutputs(?ps = ps)
+    static member getFinalOutputsBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.getFinalOutputs(graph = graph, ?ps = ps)
         |> ResizeArray.filter (fun n -> predicate n)
 
-    static member getPreviousNodesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectBackwards (node, QLabProcess.inputs, ?ps = ps)
+    static member getPreviousNodesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.collectBackwards (node, QLabProcess.inputs, graph = graph, ?ps = ps)
 
-    static member getSucceedingNodesOf (node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.collectForwards (node, QLabProcess.outputs, ?ps = ps)
+    static member getSucceedingNodesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.collectForwards (node, QLabProcess.outputs, graph = graph, ?ps = ps)
 
     /// Returns the names of all nodes processSequence, which are connected to the given node and for which the predicate returns true
-    static member getNodesOfBy (predicate : IONode -> bool, node : IONode, ?ps : ProcessSequence) =
-        ProcessSequence.getSucceedingNodesOf(node, ?ps = ps)
-        |> ResizeArray.append (ProcessSequence.getPreviousNodesOf(node, ?ps = ps))
+    static member getNodesOfBy (predicate : IONode -> bool, node : IONode, graph : QGraph, ?ps : ProcessSequence) =
+        QGraph.getSucceedingNodesOf(node, graph = graph, ?ps = ps)
+        |> ResizeArray.append (QGraph.getPreviousNodesOf(node, graph = graph, ?ps = ps))
         |> ResizeArray.filter (fun n -> predicate n)
 
     /// Returns the initial inputs final outputs of the assay, to which no processPoints, which are connected to the given node and for which the predicate returns true
-    static member getRootInputsOfBy (predicate : IONode -> bool, node : IONode, ?ps : ProcessSequence) =
+    static member getRootInputsOfBy (predicate : IONode -> bool, node : IONode, graph : QGraph, ?ps : ProcessSequence) =
         let f (p : QLabProcess) =
             QLabProcess.inputs p           
             |> ResizeArray.filter (fun input ->
-                ProcessSequence.nodeIsRoot(input, ?ps = ps) && predicate input
+                QGraph.nodeIsRoot(input, ?ps = ps) && predicate input
             )
-        ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
+        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
 
     /// Returns the final outputs of the assay, which point to no further nodes, which are connected to the given node and for which the predicate returns true
-    static member getFinalOutputsOfBy (predicate : IONode -> bool, node : IONode, ?ps : ProcessSequence) =
+    static member getFinalOutputsOfBy (predicate : IONode -> bool, node : IONode, graph : QGraph, ?ps : ProcessSequence) =
         let f (p : QLabProcess) =
             QLabProcess.outputs p
             |> ResizeArray.filter (fun output ->
-                ProcessSequence.nodeIsFinal(output, ?ps = ps) && predicate output
+                QGraph.nodeIsFinal(output, ?ps = ps) && predicate output
             )
-        ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
+        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
        
-    static member getValues (?ps : ProcessSequence) =
-        let ps = ProcessSequence.getProcesses(?ps = ps)
+    static member getValues (graph : QGraph, ?ps : ProcessSequence) =
+        let ps = ps |> Option.defaultValue (graph.ProcessSequence)
         ps.Processes
         |> ResizeArray.collect (fun p -> p.Values)
         |> QValueCollection
 
     /// Returns the previous values of the given node
-    static member getPreviousValuesOf (node : IONode, ?protocolName : string, ?ps : ProcessSequence) =
+    static member getPreviousValuesOf (node : IONode, graph : QGraph, ?protocolName : string, ?ps : ProcessSequence) =
         let f (p : QLabProcess) =
             match protocolName with
             | Some pn when p.Protocol.IsSome && p.Protocol.Value.Name <> pn ->
                 ResizeArray []
             | _ ->
                 p.Values
-        ProcessSequence.collectBackwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
+        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
         |> QValueCollection
 
     /// Returns the succeeding values of the given node
-    static member getSucceedingValuesOf (node : IONode, ?protocolName : string, ?ps : ProcessSequence) =
+    static member getSucceedingValuesOf (node : IONode, graph : QGraph, ?protocolName : string, ?ps : ProcessSequence) =
         let f (p : QLabProcess) =
             match protocolName with
             | Some pn when p.Protocol.IsSome && p.Protocol.Value.Name <> pn ->
                 ResizeArray []
             | _ ->
                 p.Values
-        ProcessSequence.collectForwards(IONode(graph.GetNode(node.Id)), f, ?ps = ps)
+        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
         |> QValueCollection
 
-    static member getValuesOf (node : IONode, ?protocolName : string, ?ps : ProcessSequence) =
-        (ProcessSequence.getSucceedingValuesOf(node, ?protocolName = protocolName, ?ps = ps).Values)
-        |> ResizeArray.append (ProcessSequence.getPreviousValuesOf(node, ?protocolName = protocolName, ?ps = ps).Values) 
+    static member getValuesOf (node : IONode, graph : QGraph, ?protocolName : string, ?ps : ProcessSequence) =
+        (QGraph.getSucceedingValuesOf(node, graph = graph, ?protocolName = protocolName, ?ps = ps).Values)
+        |> ResizeArray.append (QGraph.getPreviousValuesOf(node, graph = graph, ?protocolName = protocolName, ?ps = ps).Values) 
         |> QValueCollection
 
     /// Returns a new ProcessSequence, with only the values from the processes that implement the given protocol
-    static member onlyValuesOfProtocol (protocolName : string, ?ps : ProcessSequence) : QValueCollection =
-        ProcessSequence.getProcesses(?ps = ps).Processes
+    static member onlyValuesOfProtocol (protocolName : string, graph : QGraph, ?ps : ProcessSequence) : QValueCollection =
+        ps 
+        |> Option.defaultValue (graph.ProcessSequence)
+        |> fun ps -> ps.Processes
         |> ResizeArray.collect (fun p -> 
             match p.Protocol with
             | Some pt when pt.Name = protocolName ->
@@ -276,43 +336,43 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
     /// Returns the names of all nodes in the Process sequence
     member this.NodesOf(node : IONode) =
-        ProcessSequence.getNodesOfBy((fun _ -> true),node,this)
+        QGraph.getNodesOfBy((fun _ -> true),node,this)
 
     /// Returns the names of all the input nodes in the Process sequence to which no output points, that are connected to the given node
     member this.FirstNodesOf(node : IONode) = 
-        ProcessSequence.getRootInputsOfBy ((fun _ -> true),node,this)
+        QGraph.getRootInputsOfBy ((fun _ -> true),node,this)
 
     /// Returns the names of all the output nodes in the Process sequence that point to no input, that are connected to the given node
     member this.LastNodesOf(node : IONode) = 
-        ProcessSequence.getFinalOutputsOfBy ((fun _ -> true),node,this)
+        QGraph.getFinalOutputsOfBy ((fun _ -> true),node,this)
 
     /// Returns the names of all samples in the Process sequence, that are connected to the given node
     member this.SamplesOf(node : IONode) =
-        ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsSample), node, this)
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsSample), node, this)
 
     /// Returns the names of all the input samples in the Process sequence to which no output points, that are connected to the given node
     member this.FirstSamplesOf(node : IONode) = 
-        ProcessSequence.getRootInputsOfBy ((fun (io : IONode) -> io.IsSample), node, this)
+        QGraph.getRootInputsOfBy ((fun (io : IONode) -> io.IsSample), node, this)
 
     /// Returns the names of all the output samples in the Process sequence that point to no input, that are connected to the given node
     member this.LastSamplesOf(node : IONode) = 
-        ProcessSequence.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsSample), node, this)
+        QGraph.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsSample), node, this)
 
     /// Returns the names of all sources in the Process sequence, that are connected to the given node
     member this.SourcesOf(node : IONode) =
-        ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsSource), node, this)
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsSource), node, this)
 
     /// Returns the names of all data in the Process sequence, that are connected to the given node
     member this.DataOf(node : IONode) =
-        ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsFile), node, this)
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsFile), node, this)
 
     /// Returns the names of all the input data in the Process sequence to which no output points, that are connected to the given node
     member this.FirstDataOf(node : IONode) = 
-        ProcessSequence.getRootInputsOfBy ((fun (io : IONode) -> io.IsFile), node, this)
+        QGraph.getRootInputsOfBy ((fun (io : IONode) -> io.IsFile), node, this)
 
     /// Returns the names of all the output data in the Process sequence that point to no input, that are connected to the given node
     member this.LastDataOf(node: IONode) = 
-        ProcessSequence.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsFile), node, this)
+        QGraph.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsFile), node, this)
 
     /// Returns all values in the process sequence
     ///
@@ -320,9 +380,9 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     member this.Values(?protocolName) = 
         match protocolName with
         | Some pn ->
-            ProcessSequence.onlyValuesOfProtocol(pn, this)
+            QGraph.onlyValuesOfProtocol(pn, this)
         | None ->
-            ProcessSequence.getValues(this)
+            QGraph.getValues(this)
 
 
     /// Returns all values in the process sequence whose header matches the given category
@@ -366,13 +426,13 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     ///
     /// If a protocol name is given, returns only the values of the processes that implement this protocol
     member this.PreviousValuesOf(node : IONode, ?protocolName) =
-        ProcessSequence.getPreviousValuesOf(node, ?protocolName = protocolName, ps = this)
+        QGraph.getPreviousValuesOf(node, graph = this, ?protocolName = protocolName, ps = this.ProcessSequence)
 
     /// Returns all values in the process sequence, that are connected to the given node and come after it in the sequence
     ///
     /// If a protocol name is given, returns only the values of the processes that implement this protocol
     member this.SucceedingValuesOf(node : IONode, ?protocolName) =
-        ProcessSequence.getSucceedingValuesOf(node, ?protocolName = protocolName, ps = this)
+        QGraph.getSucceedingValuesOf(node, graph = this, ?protocolName = protocolName, ps = this.ProcessSequence)
 
     /// Returns all values in the process sequence, that are connected to the given node
     ///
@@ -461,50 +521,55 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
 
     /// Returns the names of all nodes in the Process sequence
     member this.Nodes =
-        ProcessSequence.getNodes(this)
+        QGraph.getNodes(this)
 
     /// Returns the names of all the input nodes in the Process sequence to which no output points
     member this.FirstNodes = 
-        ProcessSequence.getRootInputs(this)
+        QGraph.getRootInputs(this)
 
     /// Returns the names of all the output nodes in the Process sequence that point to no input
     member this.LastNodes = 
-        ProcessSequence.getFinalOutputs(this)
+        QGraph.getFinalOutputs(this)
 
     /// Returns the names of all samples in the Process sequence
     member this.Samples =
-        ProcessSequence.getNodesBy ((fun (io : IONode) -> io.IsSample),this)
+        QGraph.getNodesBy ((fun (io : IONode) -> io.IsSample),this)
 
     /// Returns the names of all the input samples in the Process sequence to which no output points
     member this.FirstSamples = 
-        ProcessSequence.getRootInputsBy ((fun (io : IONode) -> io.IsSample),this)
+        QGraph.getRootInputsBy ((fun (io : IONode) -> io.IsSample),this)
 
     /// Returns the names of all the output samples in the Process sequence that point to no input
     member this.LastSamples = 
-        ProcessSequence.getFinalOutputsBy ((fun (io : IONode) -> io.IsSample),this)
+        QGraph.getFinalOutputsBy ((fun (io : IONode) -> io.IsSample),this)
 
     /// Returns the names of all sources in the Process sequence
     member this.Sources =
-        ProcessSequence.getNodesBy ((fun (io : IONode) -> io.IsSource),this)
+        QGraph.getNodesBy ((fun (io : IONode) -> io.IsSource),this)
 
     /// Returns the names of all data in the Process sequence
     member this.Data =
-        ProcessSequence.getNodesBy ((fun (io : IONode) -> io.IsFile),this)
+        QGraph.getNodesBy ((fun (io : IONode) -> io.IsFile),this)
 
     /// Returns the names of all the input data in the Process sequence to which no output points
     member this.FirstData = 
-        ProcessSequence.getRootInputsBy ((fun (io : IONode) -> io.IsFile),this)
+        QGraph.getRootInputsBy ((fun (io : IONode) -> io.IsFile),this)
 
     /// Returns the names of all the output data in the Process sequence that point to no input
     member this.LastData = 
-        ProcessSequence.getFinalOutputsBy ((fun (io : IONode) -> io.IsFile),this)
+        QGraph.getFinalOutputsBy ((fun (io : IONode) -> io.IsFile),this)
 
 [<AttachMembers>]
-type QLabProcess(node : LDNode) as this = 
+type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this = 
 
-   inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
+
+    inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
+
+    let context() = parentGraph |> Option.map (fun g -> g.Context)
+
     do 
-        if LDLabProcess.validate(node, context = context) |> not then
+        
+        if LDLabProcess.validate(node, ?context = context()) |> not then
             failwithf "The provided node with id %s is not a valid Process" node.Id
         node.GetProperties(false)
         |> Seq.iter (fun kv ->
@@ -513,54 +578,77 @@ type QLabProcess(node : LDNode) as this =
         )
         //node.DeepCopyPropertiesTo(this)
 
-    static member name (labProcess : QLabProcess) =
-        LDLabProcess.getNameAsString(labProcess, context = context)
+    static member name (labProcess : QLabProcess) = labProcess.Name
 
-    static member inputs (labProcess : QLabProcess) =
-        LDLabProcess.getObjects(labProcess, graph = graph, context = context)
-        |> ResizeArray.map IONode
+    static member inputs (labProcess : QLabProcess) = labProcess.Inputs
 
-    static member outputs (labProcess : QLabProcess) =
-        LDLabProcess.getResults(labProcess, graph = graph, context = context)
-        |> ResizeArray.map IONode
+    static member outputs (labProcess : QLabProcess) = labProcess.Outputs
 
-    static member inputNames (labProcess : QLabProcess) =
-        let inputs = QLabProcess.inputs labProcess
-        inputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, context = context))
+    static member inputNames (labProcess : QLabProcess) = labProcess.InputNames
 
-    static member outputNames (labProcess : QLabProcess) =
-        let outputs = QLabProcess.outputs labProcess
-        outputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, context = context))
+    static member outputNames (labProcess : QLabProcess) = labProcess.OutputNames
 
-    static member inputTypes (labProcess : QLabProcess)  =
-        let inputs = QLabProcess.inputs labProcess
-        inputs |> ResizeArray.map (fun i -> i.SchemaType)
+    static member inputTypes (labProcess : QLabProcess)  = labProcess.InputTypes
 
-    static member outputTypes (labProcess : QLabProcess) =
-        let outputs = QLabProcess.outputs labProcess
-        outputs |> ResizeArray.map (fun i -> i.SchemaType)
+    static member outputTypes (labProcess : QLabProcess) = labProcess.OutputTypes
 
     member this.Name = 
-        QLabProcess.name this
+        LDLabProcess.getNameAsString(this, ?context = context())
 
-    member this.Inputs = QLabProcess.inputs this
+    member this.Inputs = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
+        |> ResizeArray.map (fun ioNode -> IONode(ioNode))
 
-    member this.Outputs = QLabProcess.outputs this
+    member this.Outputs = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
+        |> ResizeArray.map (fun ioNode -> IONode(ioNode))
 
-    member this.InputNames = QLabProcess.inputNames this
+    member this.InputNames = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        let inputs = LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
+        inputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, ?context = context()))
 
-    member this.OutputNames = QLabProcess.outputNames this
+    member this.OutputNames = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        let outputs = LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
+        outputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, ?context = context()))
 
-    member this.InputTypes = QLabProcess.inputTypes this
+    member this.InputTypes = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        let inputs = LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
+        inputs |> ResizeArray.map (fun i -> i.SchemaType)
 
-    member this.OutputTypes = QLabProcess.outputTypes this
+    member this.OutputTypes = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        let outputs = LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
+        outputs |> ResizeArray.map (fun i -> i.SchemaType)
 
     member this.ParameterValues =
-        LDLabProcess.getParameterValues(this, graph = graph, context = context)
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDLabProcess.getParameterValues(this, ?graph = parentGraph, ?context = context())
         |> ResizeArray.map (fun pvNode -> QPropertyValue(pvNode))
 
     member this.Protocol : QLabProtocol option = 
-        LDLabProcess.tryGetExecutesLabProtocol(this, graph = graph, context = context)
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDLabProcess.tryGetExecutesLabProtocol(this, ?graph = parentGraph, ?context = context())
         |> Option.map (fun (lpNode : LDNode) -> QLabProtocol(lpNode))
 
     member this.Components = 
@@ -600,9 +688,52 @@ type QLabProcess(node : LDNode) as this =
 
 
 [<AttachMembers>]
-type IONode(node : LDNode) as this =
+type QLabProtocol(node : LDNode, ?parentGraph : QGraph) as this = 
 
     inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
+
+    let context() = parentGraph |> Option.map (fun g -> g.Context)
+
+    do 
+        if LDLabProtocol.validate(node, ?context = context()) |> not then
+            failwithf "The provided node with id %s is not a valid Process" node.Id
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+        //node.DeepCopyPropertiesTo(this)
+
+    static member name (labProtocol : QLabProtocol) =
+        labProtocol.Name
+
+    static member components (labProtocol : QLabProtocol) =
+        labProtocol.Components
+
+    member this.Name = 
+        LDLabProtocol.getNameAsString(this, ?context = context())
+
+    member this.Components = 
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDLabProtocol.getComponents(this, ?graph = parentGraph, ?context = context())
+        |> ResizeArray.map (fun cvNode -> QPropertyValue(cvNode))
+
+    override this.GetHashCode () : int = 
+        this.Id.GetHashCode()
+
+    override this.Equals(obj: obj) : bool =
+        match obj with
+        | :? QLabProtocol as other -> this.Id = other.Id
+        | _ -> false
+
+[<AttachMembers>]
+type IONode(node : LDNode, ?parentGraph : QGraph) as this =
+
+    inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
+
+    let context() = parentGraph |> Option.map (fun g -> g.Context)
 
     do        
         node.GetProperties(false)
@@ -612,18 +743,21 @@ type IONode(node : LDNode) as this =
         )
         //node.DeepCopyPropertiesTo(this)
 
-    member this.Name : string = LDSample.getNameAsString(this, context = context)
+    member this.Name : string = LDSample.getNameAsString(this, ?context = context())
 
-    member this.IsSample = LDSample.validateSample(this, context = context)
+    member this.IsSample = LDSample.validateSample(this, ?context = context())
 
-    member this.IsSource = LDSample.validateSource(this, context = context)
+    member this.IsSource = LDSample.validateSource(this, ?context = context())
 
-    member this.IsMaterial = LDSample.validateMaterial(this, context = context)
+    member this.IsMaterial = LDSample.validateMaterial(this, ?context = context())
 
-    member this.IsFile = LDFile.validate(this, context = context)
+    member this.IsFile = LDFile.validate(this, ?context = context())
 
     member this.AdditionalProperties = 
-        LDSample.getAdditionalProperties(this, context = context, graph = graph)
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        LDSample.getAdditionalProperties(this, ?context = context(), ?graph = parentGraph)
         |> ResizeArray.map (fun apNode -> QPropertyValue(apNode))
 
     member this.Characteristics = 
@@ -635,100 +769,159 @@ type IONode(node : LDNode) as this =
         |> ResizeArray.filter (fun pv -> pv.IsFactor)
 
     member this.HasResultOf() = 
-       this.HasProperty(resultOf, context = context)
+       this.HasProperty(resultOf, ?context = context())
 
     member this.HasObjectOf() =
-        this.HasProperty(objectOf, context = context)
+        this.HasProperty(objectOf, ?context = context())
 
     member this.ResultOf() = 
-        this.GetPropertyNodes(resultOf, graph = graph, context = context)
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        this.GetPropertyNodes(resultOf, ?graph = parentGraph, ?context = context())
 
     member this.ObjectOf() =
-        this.GetPropertyNodes(objectOf, graph = graph, context = context)
+        #if !FABLE_COMPILER
+        let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
+        #endif
+        this.GetPropertyNodes(objectOf, ?graph = parentGraph, ?context = context())
         
     /// Returns all other nodes in the process sequence, that are connected to this node
-    member this.GetNodes() = ProcessSequence.getNodesOfBy((fun _ -> true),this)
+    member this.GetNodes() = 
+        if parentGraph.IsNone then failwithf "IONode.GetNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getNodesOfBy((fun _ -> true),this, graph = parentGraph.Value)
 
     /// Returns all other nodes in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-    member this.GetFirstNodes() = ProcessSequence.getRootInputsOfBy((fun _ -> true),this)
+    member this.GetFirstNodes() = 
+        if parentGraph.IsNone then failwithf "IONode.GetFirstNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getRootInputsOfBy((fun _ -> true),this, graph = parentGraph.Value)
 
     /// Returns all other nodes in the process sequence, that are connected to this node and have no more sink nodes they point to
-    member this.GetLastNodes() = ProcessSequence.getFinalOutputsOfBy((fun _ -> true),this)
+    member this.GetLastNodes() = 
+        if parentGraph.IsNone then failwithf "IONode.GetLastNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getFinalOutputsOfBy((fun _ -> true),this, graph = parentGraph.Value)
 
     /// Returns all other samples in the process sequence, that are connected to this node
-    member this.GetSamples() = ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsSample), this)
+    member this.GetSamples() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSamples requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsSample), this, graph = parentGraph.Value)
 
     /// Returns all other samples in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-    member this.GetFirstSamples() = ProcessSequence.getRootInputsOfBy ((fun (io : IONode) -> io.IsSample), this)
+    member this.GetFirstSamples() = 
+        if parentGraph.IsNone then failwithf "IONode.GetFirstSamples requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getRootInputsOfBy ((fun (io : IONode) -> io.IsSample), this, graph = parentGraph.Value)
         
     /// Returns all other samples in the process sequence, that are connected to this node and have no more sink nodes they point to
-    member this.GetLastSamples() = ProcessSequence.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsSample), this)
+    member this.GetLastSamples() = 
+        if parentGraph.IsNone then failwithf "IONode.GetLastSamples requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsSample), this, graph = parentGraph.Value)
 
     /// Returns all other sources in the process sequence, that are connected to this node
-    member this.GetSources() = ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsSource), this)
+    member this.GetSources() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSources requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsSource), this, graph = parentGraph.Value)
 
     /// Returns all other data in the process sequence, that are connected to this node
-    member this.GetData() = ProcessSequence.getNodesOfBy ((fun (io : IONode) -> io.IsFile), this)
+    member this.GetData() = 
+        if parentGraph.IsNone then failwithf "IONode.GetData requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getNodesOfBy ((fun (io : IONode) -> io.IsFile), this, graph = parentGraph.Value)
 
     /// Returns all other data in the process sequence, that are connected to this node and have no more origin nodes pointing to them
-    member this.GetFirstData() = ProcessSequence.getRootInputsOfBy ((fun (io : IONode) -> io.IsFile), this)
+    member this.GetFirstData() = 
+        if parentGraph.IsNone then failwithf "IONode.GetFirstData requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getRootInputsOfBy ((fun (io : IONode) -> io.IsFile), this, graph = parentGraph.Value)
 
     /// Returns all other data in the process sequence, that are connected to this node and have no more sink nodes they point to
-    member this.GetLastData() = ProcessSequence.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsFile), this)
+    member this.GetLastData() = 
+        if parentGraph.IsNone then failwithf "IONode.GetLastData requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getFinalOutputsOfBy ((fun (io : IONode) -> io.IsFile), this, graph = parentGraph.Value)
 
     /// Returns all values in the process sequence, that are connected to this given node
-    member this.GetValues() = ProcessSequence.getValuesOf(this)
+    member this.GetValues() = 
+        if parentGraph.IsNone then failwithf "IONode.GetValues requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getValuesOf(this, graph = parentGraph.Value)
 
     /// Returns all values in the process sequence, that are connected to this given node and come before it in the sequence
-    member this.GetPreviousValues() = ProcessSequence.getPreviousValuesOf(this)
+    member this.GetPreviousValues() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousValues requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousValuesOf(this, graph = parentGraph.Value)
 
     /// Returns all values in the process sequence, that are connected to the given node and come after it in the sequence
-    member this.GetSucceedingValues() = ProcessSequence.getSucceedingValuesOf(this)
+    member this.GetSucceedingValues() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingValues requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingValuesOf(this, graph = parentGraph.Value)
 
     /// Returns all characteristic values in the process sequence, that are connected to the given node
-    member this.GetCharacteristics() = ProcessSequence.getValuesOf(this).Characteristics()
+    member this.GetCharacteristics() = 
+        if parentGraph.IsNone then failwithf "IONode.GetCharacteristics requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getValuesOf(this, graph = parentGraph.Value).Characteristics()
 
     /// Returns all characteristic values in the process sequence, that are connected to the given node and come before it in the sequence
-    member this.GetPreviousCharacteristics() = ProcessSequence.getPreviousValuesOf(this).Characteristics()
+    member this.GetPreviousCharacteristics() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousCharacteristics requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousValuesOf(this, graph = parentGraph.Value).Characteristics()
 
     /// Returns all characteristic values in the process sequence, that are connected to the given node and come after it in the sequence
-    member this.GetSucceedingCharacteristics() = ProcessSequence.getSucceedingValuesOf(this).Characteristics()
+    member this.GetSucceedingCharacteristics() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingCharacteristics requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingValuesOf(this, graph = parentGraph.Value).Characteristics()
 
     /// Returns all parameter values in the process sequence, that are connected to the given node
-    member this.GetParameters() = ProcessSequence.getValuesOf(this).Parameters()
+    member this.GetParameters() = 
+        if parentGraph.IsNone then failwithf "IONode.GetParameters requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getValuesOf(this, graph = parentGraph.Value).Parameters()
 
     /// Returns all parameter values in the process sequence, that are connected to the given node and come before it in the sequence
-    member this.GetPreviousParameters() = ProcessSequence.getPreviousValuesOf(this).Parameters()
+    member this.GetPreviousParameters() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousParameters requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousValuesOf(this, graph = parentGraph.Value).Parameters()
 
     /// Returns all parameter values in the process sequence, that are connected to the given node and come after it in the sequence
-    member this.GetSucceedingParameters() = ProcessSequence.getSucceedingValuesOf(this).Parameters()
+    member this.GetSucceedingParameters() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingParameters requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingValuesOf(this, graph = parentGraph.Value).Parameters()
 
     /// Returns all factor values in the process sequence, that are connected to the given node
-    member this.GetFactors() = ProcessSequence.getValuesOf(this).Factors()
+    member this.GetFactors() = 
+        if parentGraph.IsNone then failwithf "IONode.GetFactors requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getValuesOf(this, graph = parentGraph.Value).Factors()
 
     /// Returns all factor values in the process sequence, that are connected to the given node and come before it in the sequence
-    member this.GetPreviousFactors() = ProcessSequence.getPreviousValuesOf(this).Factors()
+    member this.GetPreviousFactors() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousFactors requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousValuesOf(this, graph = parentGraph.Value).Factors()
 
     /// Returns all factor values in the process sequence, that are connected to the given node and come after it in the sequence
-    member this.GetSucceedingFactors() = ProcessSequence.getSucceedingValuesOf(this).Factors()
+    member this.GetSucceedingFactors() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingFactors requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingValuesOf(this, graph = parentGraph.Value).Factors()
 
     /// Returns all component values in the process sequence, that are connected to the given node
-    member this.GetComponents() = ProcessSequence.getValuesOf(this).Components()
+    member this.GetComponents() = 
+        if parentGraph.IsNone then failwithf "IONode.GetComponents requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getValuesOf(this, graph = parentGraph.Value).Components()
 
     /// Returns all component values in the process sequence, that are connected to the given node and come before it in the sequence
-    member this.GetPreviousComponents() = ProcessSequence.getPreviousValuesOf(this).Components()
+    member this.GetPreviousComponents() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousComponents requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousValuesOf(this, graph = parentGraph.Value).Components()
 
     /// Returns all component values in the process sequence, that are connected to the given node and come after it in the sequence
-    member this.GetSucceedingComponents() = ProcessSequence.getSucceedingValuesOf(this).Components()
+    member this.GetSucceedingComponents() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingComponents requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingValuesOf(this, graph = parentGraph.Value).Components()
 
     member this.GetProcesses() =
-        ProcessSequence.getProcessesOf(this)
+        if parentGraph.IsNone then failwithf "IONode.GetProcesses requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getProcessesOf(this, graph = parentGraph.Value)
 
     member this.GetPreviousProcesses() =
-        ProcessSequence.getPreviousProcessesOf(this)
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousProcesses requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousProcessesOf(this, graph = parentGraph.Value)
 
     member this.GetSucceedingProcesses() =
-        ProcessSequence.getSucceedingProcessesOf(this)
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingProcesses requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingProcessesOf(this, graph = parentGraph.Value)
 
     override this.GetHashCode() =
         this.Id.GetHashCode()

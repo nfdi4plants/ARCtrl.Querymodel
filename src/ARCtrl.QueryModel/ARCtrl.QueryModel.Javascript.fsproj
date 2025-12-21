@@ -30,7 +30,6 @@
     <Compile Include="Investigation.fs" />
     <Compile Include="ProcessCore\KnowledgeGraph.fs" />
     <Compile Include="ProcessCore\PropertyValue.fs" />
-    <Compile Include="ProcessCore\QLabProtocol.fs" />
     <Compile Include="ProcessCore\ValueCollection.fs" />
     <Compile Include="processcore\ProcessCollection.fs" />
     <!--<Compile Include="Linq\Helpers.fs" />
