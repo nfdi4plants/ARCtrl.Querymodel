@@ -140,9 +140,9 @@ type QGraph(inGraph : LDGraph) as this =
             graph.Nodes
             |> ResizeArray.choose (fun n -> 
                 if LDSample.validate(n, context = graph.Context) then
-                    Some (IONode(n))
+                    Some (IONode(n,parentGraph = graph))
                 elif LDFile.validate(n, context = graph.Context) then
-                    Some (IONode(n))
+                    Some (IONode(n,parentGraph = graph))
                 else
                     None
             )
@@ -207,14 +207,14 @@ type QGraph(inGraph : LDGraph) as this =
         loop (ResizeArray [node])
 
     static member getPreviousProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
-        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
+        QGraph.collectBackwards(node, id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         //|> ResizeArray.distinct
         |> Seq.distinct
         |> ResizeArray
         |> ProcessSequence
 
     static member getSucceedingProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
-        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
+        QGraph.collectForwards(node, id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         //|> ResizeArray.distinct
         |> Seq.distinct
         |> ResizeArray
@@ -223,9 +223,9 @@ type QGraph(inGraph : LDGraph) as this =
     /// Returns a new process sequence, only with those rows that contain either an educt or a product entity of the given node (or entity)
     static member getProcessesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
         let forwardProcesses = 
-            QGraph.collectForwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
+            QGraph.collectForwards(node, id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         let backwardProcesses = 
-            QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), id >> ResizeArray.singleton, graph = graph, ?ps = ps)
+            QGraph.collectBackwards(node, id >> ResizeArray.singleton, graph = graph, ?ps = ps)
         ResizeArray.append forwardProcesses backwardProcesses
         //|> ResizeArray.distinct
         |> Seq.distinct
@@ -277,7 +277,7 @@ type QGraph(inGraph : LDGraph) as this =
             |> ResizeArray.filter (fun input ->
                 QGraph.nodeIsRoot(input, ?ps = ps) && predicate input
             )
-        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
+        QGraph.collectBackwards(node, f, graph = graph, ?ps = ps)
 
     /// Returns the final outputs of the assay, which point to no further nodes, which are connected to the given node and for which the predicate returns true
     static member getFinalOutputsOfBy (predicate : IONode -> bool, node : IONode, graph : QGraph, ?ps : ProcessSequence) =
@@ -286,7 +286,7 @@ type QGraph(inGraph : LDGraph) as this =
             |> ResizeArray.filter (fun output ->
                 QGraph.nodeIsFinal(output, ?ps = ps) && predicate output
             )
-        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
+        QGraph.collectForwards(node, f, graph = graph, ?ps = ps)
        
     static member getValues (graph : QGraph, ?ps : ProcessSequence) =
         let ps = ps |> Option.defaultValue (graph.ProcessSequence)
@@ -302,7 +302,7 @@ type QGraph(inGraph : LDGraph) as this =
                 ResizeArray []
             | _ ->
                 p.Values
-        QGraph.collectBackwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
+        QGraph.collectBackwards(node, f, graph = graph, ?ps = ps)
         |> QValueCollection
 
     /// Returns the succeeding values of the given node
@@ -313,7 +313,7 @@ type QGraph(inGraph : LDGraph) as this =
                 ResizeArray []
             | _ ->
                 p.Values
-        QGraph.collectForwards(IONode(graph.GetNode(node.Id)), f, graph = graph, ?ps = ps)
+        QGraph.collectForwards(node, f, graph = graph, ?ps = ps)
         |> QValueCollection
 
     static member getValuesOf (node : IONode, graph : QGraph, ?protocolName : string, ?ps : ProcessSequence) =
@@ -520,8 +520,16 @@ type QGraph(inGraph : LDGraph) as this =
             this.Values(?protocolName = protocolName).ContainsByName name
 
     /// Returns the names of all nodes in the Process sequence
-    member this.Nodes =
+    member this.IONodes =
         QGraph.getNodes(this)
+
+    member this.c(name : string) =
+        this.IONodes
+        |> Seq.find (fun n -> n.Name = name)
+
+    member this.GetIONodeById(id : string) =
+        this.GetNode(id)
+        |> fun n -> IONode(n, parentGraph = this)
 
     /// Returns the names of all the input nodes in the Process sequence to which no output points
     member this.FirstNodes = 
@@ -592,6 +600,8 @@ type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this =
 
     static member outputTypes (labProcess : QLabProcess) = labProcess.OutputTypes
 
+    member this.ParentGraph = parentGraph
+
     member this.Name = 
         LDLabProcess.getNameAsString(this, ?context = context())
 
@@ -600,14 +610,14 @@ type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this =
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
         #endif
         LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
-        |> ResizeArray.map (fun ioNode -> IONode(ioNode))
+        |> ResizeArray.map (fun ioNode -> IONode(ioNode, ?parentGraph = this.ParentGraph))
 
     member this.Outputs = 
         #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
         #endif
         LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
-        |> ResizeArray.map (fun ioNode -> IONode(ioNode))
+        |> ResizeArray.map (fun ioNode -> IONode(ioNode, ?parentGraph = this.ParentGraph))
 
     member this.InputNames = 
         #if !FABLE_COMPILER
@@ -753,6 +763,8 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
 
     member this.IsFile = LDFile.validate(this, ?context = context())
 
+    member this.ParentGraph = parentGraph
+
     member this.AdditionalProperties = 
         #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
@@ -791,10 +803,18 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
         if parentGraph.IsNone then failwithf "IONode.GetNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
         QGraph.getNodesOfBy((fun _ -> true),this, graph = parentGraph.Value)
 
+    member this.GetPreviousNodes() = 
+        if parentGraph.IsNone then failwithf "IONode.GetPreviousNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getPreviousNodesOf(this, graph = parentGraph.Value)
+
     /// Returns all other nodes in the process sequence, that are connected to this node and have no more origin nodes pointing to them
     member this.GetFirstNodes() = 
         if parentGraph.IsNone then failwithf "IONode.GetFirstNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
         QGraph.getRootInputsOfBy((fun _ -> true),this, graph = parentGraph.Value)
+
+    member this.GetSucceedingNodes() = 
+        if parentGraph.IsNone then failwithf "IONode.GetSucceedingNodes requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
+        QGraph.getSucceedingNodesOf(this, graph = parentGraph.Value)
 
     /// Returns all other nodes in the process sequence, that are connected to this node and have no more sink nodes they point to
     member this.GetLastNodes() = 

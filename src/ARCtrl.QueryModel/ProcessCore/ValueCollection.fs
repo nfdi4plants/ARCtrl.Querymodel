@@ -14,6 +14,8 @@ type QValueCollection(values : ResizeArray<QPropertyValue>) =
 
     //do values.[0].C
 
+    member this.Item(i : int)  = values.[i]
+
     /// Returns the nth Item in the collection
     member this.GetAt(i : int)  = values.[i]
 
