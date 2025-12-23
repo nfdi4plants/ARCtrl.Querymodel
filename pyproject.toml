@@ -34,7 +34,7 @@ include = [
     "src/ARCtrl.Querymodel/py/**/*.py"
 ]
 packages = [
-    { include = "**/*.py", from = "src/ARCtrl.Querymodel/", to = "arctrl_querymodel" }
+    { include = "**/*.py", from = "src/ARCtrl.Querymodel/", to = "arcquerymodel" }
 ]
 
 [build-system]

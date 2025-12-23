@@ -4,6 +4,14 @@
 /// Standard Collection operations for resize array
 module ResizeArray =
 
+    let append (a : ResizeArray<_>) (b : ResizeArray<_>) =
+        let c = ResizeArray<_>(a.Count + b.Count)
+        for i in a do
+            c.Add(i)
+        for j in b do
+            c.Add(j)
+        c
+
     let map  f (a : ResizeArray<_>) =
         let b = ResizeArray<_>()
         for i in a do
@@ -57,6 +65,11 @@ module ResizeArray =
             for j in c do
                 b.Add(j)
         b
+
+    let singleton x =
+        let a = ResizeArray<_>(1)
+        a.Add(x)
+        a
 
     let distinct (a : ResizeArray<_>) =
         //let s = System.Collections.Generic.HashSet<_>()

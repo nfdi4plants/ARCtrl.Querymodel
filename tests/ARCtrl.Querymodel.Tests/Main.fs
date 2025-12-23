@@ -38,6 +38,7 @@ module TSUtils =
 let all = testSequenced <| testList "All" [
         TestARC.Tests.main     
         FragmentSelector.Tests.main
+        ProcessCore.Tests.main
     ]
 
 #if FABLE_COMPILER_JAVASCRIPT || FABLE_COMPILER_TYPESCRIPT
