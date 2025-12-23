@@ -148,15 +148,15 @@ let setPrereleaseTag() =
 let clean = BuildTask.create "Clean" [] {
     !! "src/**/bin"
     ++ "src/**/obj"
-    ++ "src/ARCtrl/ts/"
-    ++ "src/ARCtrl/py/"
+    ++ "src/ARCtrl.QueryModel/ts/"
+    ++ "src/ARCtrl.QueryModel/py/"
     ++ "tests/**/bin"
     ++ "tests/**/obj"
     ++ "tests/TestingUtils/TestResults"
     ++ "tests/**/py"
     ++ "tests/**/js"
-    ++ "tests/Javascript/ARCtrl"
-    ++ "tests/Python/ARCtrl"
+    ++ "tests/Javascript/ARCtrl.QueryModel"
+    ++ "tests/Python/ARCtrl.QueryModel"
     ++ "dist"
     ++ ProjectInfo.netPkgDir
     |> Shell.cleanDirs 
