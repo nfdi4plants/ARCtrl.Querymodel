@@ -1,10 +1,10 @@
 ﻿# ARCtrl.Querymodel
-
-> [!NOTE]  
-> Filesystem Access has been implemented in ARCtrl since v2.3.0, even transpilable to JS and Python. ARCtrl.NET is therefore deprecated and this repository hosts only ARCtrl.Querymodel.
-
-
-<a href="https://www.nuget.org/packages/ARCtrl.Querymodel/"><img alt="Nuget" src="https://img.shields.io/nuget/v/ARCtrl.Querymodel?logo=nuget&color=%234fb3d9"></a>
+ 
+| Version | Downloads |
+| :--------|-----------:|
+|<a href="https://www.nuget.org/packages/ARCtrl.QueryModel/"><img alt="Nuget" src="https://img.shields.io/nuget/v/ARCtrl.QueryModel?logo=nuget&color=%234fb3d9"></a>|<a href="https://www.nuget.org/packages/ARCtrl.QueryModel/"><img alt="Nuget" src="https://img.shields.io/nuget/dt/ARCtrl.QueryModel?color=%234FB3D9"></a>|
+|<a href="https://www.npmjs.com/package/@nfdi4plants/arcquerymodel"><img alt="NPM" src="https://img.shields.io/npm/v/%40nfdi4plants/arcquerymodel?logo=npm&color=%234fb3d9"></a>|<a href="https://www.npmjs.com/package/@nfdi4plants/arcquerymodel"><img alt="NPM" src="https://img.shields.io/npm/dt/%40nfdi4plants%2Farcquerymodel?color=%234fb3d9"></a>|
+|<a href="https://pypi.org/project/arcquerymodel/"><img alt="PyPI" src="https://img.shields.io/pypi/v/arcquerymodel?logo=pypi&color=%234fb3d9"></a>|<a href="https://pypi.org/project/arcquerymodel/"><img alt="PyPI" src="https://img.shields.io/pepy/dt/arcquerymodel?color=%234fb3d9"></a>|
 
 Adds querying functionality to the core [ARCtrl](https://github.com/nfdi4plants/ARCtrl) package in .NET.
 
