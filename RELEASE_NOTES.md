@@ -1,4 +1,31 @@
-### 3.0.0+135410b (Released 2025-9-8)
+### 3.0.0-alpha.2+04582fa (Released 2025-12-23)
+* Additions:
+    * [[#f4bfcc1](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/f4bfcc17185ef95822e368a51fc2190dca753f40)] finish up stable version of python and javascript compatability
+    * [[#567e39b](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/567e39b0f0d2b6038796bf5b02563e57be93becd)] add first bunch of process querying tests
+    * [[#2a4498a](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2a4498ab583fde82df086c07f3c95c58dc6221a4)] rework processCore by removing global graph
+    * [[#a1881ae](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/a1881ae01faa4ffe3b2501351a3a1b3c464cfc9d)] include processCore classes in py and ts
+    * [[#784a6cf](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/784a6cf573f21157092892945ff1a4cf7019370b)] continue working on fable compatible process graph
+    * [[#2fb28ab](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2fb28ab628532f46c477d5c572dea2123316cc5a)] finish first version of ProcessCore Querymodel
+    * [[#7732831](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/77328317d02955b5f391e16905fffab63f51e38b)] continue working on processCore
+    * [[#1c603e8](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/1c603e8a6aa429ed7668dc430839592bf1e0cc6f)] start experimental work on process core
+    * [[#55bbcbc](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/55bbcbc6eb262d96d669248051c1cf9312d80e22)] only run ci on windows
+    * [[#c622a0e](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/c622a0e58c35073b580b0bdac888ea2272d750b2)] update build-test.yml to prepare for fable transpilation
+    * [[#2720d07](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2720d077c12a250a9764b2bca833713634060c6a)] rename py and js packages to arcquerymodel
+    * [[#ee34565](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/ee3456596a2e41ffecd8f09b2734be5d0c9902c4)] get typescript tests running
+    * [[#9505f74](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/9505f74f02eee62dc5aa2efd1b03d3c3bfbc3b66)] finish up basic fable setup
+    * [[#64dc7b1](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/64dc7b17f0d25a20933b337cad9aa99ec49b6854)] start adding basic js and py build files
+    * [[#897fe6d](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/897fe6d13f2dcf8a1444b085b9597b743e65180f)] update build project for fable compatability
+    * [[#44527b2](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/44527b2bc961e369070eddcd37d5be038ef15342)] Add Mühlhaus as a creator in .zenodo.json
+* Deletions:
+    * [[#8df5106](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/8df5106fcb83546058fb267fdb368874330b5c45)] start rework towards fable compatability - introduce central package versioning - create js and py specific projects and dependenices - remove non-fable compatible dependenices
+* Bugfixes:
+    * [[#5f29751](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/5f29751f4745a82512e556309f35b3452571feb2)] fixes against tests
+    * [[#6821dec](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/6821dec183fa323f149f7c2bc7dd684f0785d370)] fix and test python processcore object creation failing
+    * [[#39d8967](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/39d89675bad68ff2addf984a2ebeb15d6130beea)] small final fixes for basic fable  compatability
+    * [[#82343ed](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/82343edd44ceeee2753c2fd242c24aeac7f4aecf)] fix python tests
+    * [[#e8fc045](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/e8fc0453ba7066f02fb3018c95942d5c842d53bb)] start fixing python tests
+
+### 3.0.0-alpha.1+135410b (Released 2025-9-8)
 * Additions:
     * [[#2ab9d1b](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2ab9d1b48e7708e4524c2e14a0f65deb978ad07d)] Add type field to contributors in .zenodo.json
     * [[#efc808c](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/efc808c858ecce76beb8eb8ea5fe531450fb6353)] upate ARCtrl dependency to 3.0

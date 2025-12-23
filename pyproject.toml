@@ -1,6 +1,6 @@
 [project]
 name = "arcquerymodel"
-version = "3.0.0a1"
+version = "3.0.0a2"
 description = "Library for graph-based querying of Annotated Research Contexts (ARCs)."
 authors = [
     { name = "Heinrich Lukas Weil", email = "weil@rptu.de" },
