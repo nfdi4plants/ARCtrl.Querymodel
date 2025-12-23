@@ -9,7 +9,7 @@ open System.Collections.Generic
 [<AttachMembers>]
 type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     
-    let mutable _processMap = 
+    let _processMap = 
         Dictionary<string, QLabProcess>()
         |> fun d -> 
             processes 
@@ -19,7 +19,11 @@ type ProcessSequence(processes : ResizeArray<QLabProcess>) =
     member this.Processes = processes
 
     member this.HasProcess(id : string) =
+        #if FABLE_COMPILER_PYTHON
+        Fable.Core.PyInterop.emitPyExpr (_processMap,id) "$0.__contains__($1)"
+        #else
         _processMap.ContainsKey(id)
+        #endif
 
     member this.TryGetProcess(id : string) =
         match _processMap.TryGetValue(id) with
@@ -244,19 +248,53 @@ type QGraph(inGraph : LDGraph) as this =
 
     /// Returns the names of all nodes for which the predicate returns true
     static member getNodesBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
-        QGraph.getNodes(graph = graph, ?ps = ps)
-        |> ResizeArray.filter (fun n -> predicate n)
+        match ps with
+        | Some ps -> 
+            ps.Processes        
+            |> ResizeArray.collect (fun p -> 
+                let inputs = p.Inputs |> ResizeArray.filter (fun n -> predicate n)
+                let outputs = p.Outputs |> ResizeArray.filter (fun n -> predicate n)
+                ResizeArray.append inputs outputs
+            )
+            //|> ResizeArray.distinct     
+            |> Seq.distinct
+            |> ResizeArray
+        | None ->
+            graph.Nodes
+            |> ResizeArray.choose (fun n -> 
+                if LDSample.validate(n, context = graph.Context) then
+                    Some (IONode(n,parentGraph = graph))
+                elif LDFile.validate(n, context = graph.Context) then
+                    Some (IONode(n,parentGraph = graph))
+                else
+                    None
+                |> Option.bind (fun ioNode ->
+                    if predicate ioNode then
+                        Some ioNode
+                    else
+                        None
+                )
+            )
+
 
 
     /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints, and for which the predicate returns true
     static member getRootInputsBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
-        QGraph.getRootInputs(graph = graph, ?ps = ps)
-        |> ResizeArray.filter (fun n -> predicate n)
+        QGraph.getNodesBy(predicate, graph, ?ps = ps)
+        |> ResizeArray.filter (fun n -> 
+            QGraph.getPreviousNodesOf(n, graph = graph, ?ps = ps)
+            |> Seq.exists predicate
+            |> not
+        )
 
     /// Returns the names of all final outputs of the processSequence, which point to no further nodes, and for which the predicate returns true
     static member getFinalOutputsBy (predicate : IONode -> bool, graph : QGraph, ?ps : ProcessSequence) =
-        QGraph.getFinalOutputs(graph = graph, ?ps = ps)
-        |> ResizeArray.filter (fun n -> predicate n)
+        QGraph.getNodesBy(predicate, graph, ?ps = ps)
+        |> ResizeArray.filter (fun n -> 
+            QGraph.getSucceedingNodesOf(n, graph = graph, ?ps = ps)
+            |> Seq.exists predicate
+            |> not
+        )
 
     static member getPreviousNodesOf (node : IONode, graph : QGraph, ?ps : ProcessSequence) =
         QGraph.collectBackwards (node, QLabProcess.inputs, graph = graph, ?ps = ps)
@@ -388,13 +426,13 @@ type QGraph(inGraph : LDGraph) as this =
     /// Returns all values in the process sequence whose header matches the given category
     ///
     /// If a protocol name is given, returns only the values of the processes that implement this protocol
-    member this.Values(ontology : OntologyAnnotation, ?protocolName) = 
+    member this.ValuesWithCategory(ontology : OntologyAnnotation, ?protocolName) = 
         this.Values(?protocolName = protocolName).WithCategory(ontology)
 
     /// Returns all values in the process sequence whose header matches the given name
     ///
     /// If a protocol name is given, returns only the values of the processes that implement this protocol
-    member this.Values(name : string, ?protocolName) = 
+    member this.ValuesWithName(name : string, ?protocolName) = 
         this.Values(?protocolName = protocolName).WithName(name)
 
     /// Returns all factor values in the process sequence
@@ -579,6 +617,9 @@ type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this =
         
         if LDLabProcess.validate(node, ?context = context()) |> not then
             failwithf "The provided node with id %s is not a valid Process" node.Id
+
+        // Not using deepCopyPropertiesTo to avoid copying the Id property in python
+        // 'property 'Id' of 'QPropertyValue' object has no setter'
         node.GetProperties(false)
         |> Seq.iter (fun kv ->
             if not (kv.Key = "Id") then
@@ -606,60 +647,44 @@ type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this =
         LDLabProcess.getNameAsString(this, ?context = context())
 
     member this.Inputs = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
         |> ResizeArray.map (fun ioNode -> IONode(ioNode, ?parentGraph = this.ParentGraph))
 
     member this.Outputs = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
         |> ResizeArray.map (fun ioNode -> IONode(ioNode, ?parentGraph = this.ParentGraph))
 
     member this.InputNames = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         let inputs = LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
         inputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, ?context = context()))
 
     member this.OutputNames = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         let outputs = LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
         outputs |> ResizeArray.map (fun i -> LDSample.getNameAsString(i, ?context = context()))
 
     member this.InputTypes = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         let inputs = LDLabProcess.getObjects(this, ?graph = parentGraph, ?context = context())
         inputs |> ResizeArray.map (fun i -> i.SchemaType)
 
     member this.OutputTypes = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         let outputs = LDLabProcess.getResults(this, ?graph = parentGraph, ?context = context())
         outputs |> ResizeArray.map (fun i -> i.SchemaType)
 
     member this.ParameterValues =
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDLabProcess.getParameterValues(this, ?graph = parentGraph, ?context = context())
         |> ResizeArray.map (fun pvNode -> QPropertyValue(pvNode))
 
     member this.Protocol : QLabProtocol option = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDLabProcess.tryGetExecutesLabProtocol(this, ?graph = parentGraph, ?context = context())
-        |> Option.map (fun (lpNode : LDNode) -> QLabProtocol(lpNode))
+        |> Option.map (fun (lpNode : LDNode) -> QLabProtocol(lpNode, ?parentGraph = this.ParentGraph))
 
     member this.Components = 
         match this.Protocol with
@@ -720,13 +745,13 @@ type QLabProtocol(node : LDNode, ?parentGraph : QGraph) as this =
     static member components (labProtocol : QLabProtocol) =
         labProtocol.Components
 
+    member this.ParentGraph = parentGraph
+
     member this.Name = 
         LDLabProtocol.getNameAsString(this, ?context = context())
 
     member this.Components = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDLabProtocol.getComponents(this, ?graph = parentGraph, ?context = context())
         |> ResizeArray.map (fun cvNode -> QPropertyValue(cvNode))
 
@@ -766,9 +791,7 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
     member this.ParentGraph = parentGraph
 
     member this.AdditionalProperties = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         LDSample.getAdditionalProperties(this, ?context = context(), ?graph = parentGraph)
         |> ResizeArray.map (fun apNode -> QPropertyValue(apNode))
 
@@ -787,15 +810,11 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
         this.HasProperty(objectOf, ?context = context())
 
     member this.ResultOf() = 
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         this.GetPropertyNodes(resultOf, ?graph = parentGraph, ?context = context())
 
     member this.ObjectOf() =
-        #if !FABLE_COMPILER
         let parentGraph = parentGraph |> Option.map (fun g -> g :> LDGraph)
-        #endif
         this.GetPropertyNodes(objectOf, ?graph = parentGraph, ?context = context())
         
     /// Returns all other nodes in the process sequence, that are connected to this node

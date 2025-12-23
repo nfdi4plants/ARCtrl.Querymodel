@@ -12,7 +12,15 @@ type QPropertyValue(node : LDNode) as this =
     do 
         if LDPropertyValue.validate(node, context = context) |> not then
             failwithf "The provided node with id %s is not a valid PropertyValue" node.Id
-        node.DeepCopyPropertiesTo(this)
+        
+        // Not using deepCopyPropertiesTo to avoid copying the Id property in python
+        // 'property 'Id' of 'QPropertyValue' object has no setter'
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+        //node.DeepCopyPropertiesTo(this)
 
     member this.IsCharacteristic =
         LDPropertyValue.validateCharacteristicValue(this, context = context)

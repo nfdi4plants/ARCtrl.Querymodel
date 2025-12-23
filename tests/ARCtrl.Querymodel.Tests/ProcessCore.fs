@@ -14,7 +14,7 @@ let constructors =
             Expect.equal p.Id "#Test_Process_ID" "Id property should be set correctly"
             Expect.equal p.Name "Test Process" "Name property should be set correctly"
         testCase "IONode" <| fun _ ->
-            let node = LDSample.create(name = "Test IO Node", id = "#Test_IO_Node_ID")
+            let node = LDSample.createSample(name = "Test IO Node", id = "#Test_IO_Node_ID")
             let p = IONode(node)
             Expect.equal p.Id "#Test_IO_Node_ID" "Id property should be set correctly"
             Expect.equal p.Name "Test IO Node" "Name property should be set correctly"
@@ -24,7 +24,7 @@ let constructors =
             Expect.equal p.Id "#Test_QLab_Protocol_ID" "Id property should be set correctly"
             Expect.equal p.Name "Test QLab Protocol" "Name property should be set correctly"
         testCase "QGraph" <| fun _ -> 
-            let sample = LDSample.create(name = "Test IO Node", id = "#Test_IO_Node_ID")
+            let sample = LDSample.createSample(name = "Test IO Node", id = "#Test_IO_Node_ID")
             let data = LDFile.create(name = "MyFile.txt")
             let proc = LDLabProcess.create(name = "Test Process", id = "#Test_Process_ID", objects = ResizeArray [sample], results = ResizeArray[data])
             let dataset = LDDataset.create(name = "Test Dataset", id = "#Test_Dataset_ID", abouts = ResizeArray [proc])
@@ -53,7 +53,7 @@ let getNodes =
     
     testList "nodeRetrieval" [
         testList "SingleProcess" [
-            let sample = LDSample.create(name = "Test IO Node", id = "#Test_IO_Node_ID")
+            let sample = LDSample.createSample(name = "Test IO Node", id = "#Test_IO_Node_ID")
             let data = LDFile.create(name = "MyFile.txt")
             let proc = LDLabProcess.create(name = "Test Process", id = "#Test_Process_ID", objects = ResizeArray [sample], results = ResizeArray[data])
             let dataset = LDDataset.create(name = "Test Dataset", id = "#Test_Dataset_ID", abouts = ResizeArray [proc])
@@ -82,8 +82,8 @@ let getNodes =
                 Expect.equal graph.LastSamples.[0].Id sample.Id "Final sample node Id should match"
         ]
         testList "ParallelProcesses" [
-            let sample1 = LDSample.create(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
-            let sample2 = LDSample.create(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
+            let sample1 = LDSample.createSample(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
+            let sample2 = LDSample.createSample(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
             let data1 = LDFile.create(name = "MyFile1.txt")
             let data2 = LDFile.create(name = "MyFile2.txt")
             let proc1 = LDLabProcess.create(name = "Test Process 1", id = "#Test_Process_ID_1", objects = ResizeArray [sample1], results = ResizeArray[data1])
@@ -122,8 +122,8 @@ let getNodes =
                 Expect.equal graph.LastSamples.[1].Id sample2.Id "Second sample node Id should match"
         ]
         testList "SequentialProcesses" [
-            let sample1 = LDSample.create(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
-            let sample2 = LDSample.create(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
+            let sample1 = LDSample.createSample(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
+            let sample2 = LDSample.createSample(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
 
             let proc1 = LDLabProcess.create(name = "Test Process 1", id = "#Test_Process_ID_1", objects = ResizeArray [sample1], results = ResizeArray[sample2])
             let data1 = LDFile.create(name = "MyFile1.txt")
@@ -166,7 +166,7 @@ let getValues =
             let factor = LDPropertyValue.createFactorValue(name = "pH", value = "7.0")
             let componentV = LDPropertyValue.createComponent(name = "medium", value = "LB broth")
             
-            let sample = LDSample.create(name = "Test IO Node", id = "#Test_IO_Node_ID", additionalProperties = ResizeArray [characteristic])
+            let sample = LDSample.createSample(name = "Test IO Node", id = "#Test_IO_Node_ID", additionalProperties = ResizeArray [characteristic])
             let data = LDFile.create(name = "MyFile.txt")
             data.SetProperty(LDSample.additionalProperty, ResizeArray [factor])
             let protocol = LDLabProtocol.create(name = "Test QLab Protocol", id = "#Test_QLab_Protocol_ID", labEquipments = ResizeArray [componentV])
@@ -208,16 +208,16 @@ let getNodesOf = testList "getNodesOf" [
         testList "ParallelProcesses" [
             /// sample1 -proc1-> sample2 -proc2-> data1 -proc3-> data2
             /// sample3 -proc4-> sample4 -proc5-> data3 -proc6-> data4
-            let sample1 = LDSample.create(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
-            let sample2 = LDSample.create(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
+            let sample1 = LDSample.createSample(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
+            let sample2 = LDSample.createSample(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
             let data1 = LDFile.create(name = "MyFile1.txt")
             let data2 = LDFile.create(name = "MyFile2.txt")
             let proc1 = LDLabProcess.create(name = "Test Process 1", id = "#Test_Process_ID_1", objects = ResizeArray [sample1], results = ResizeArray[sample2])
             let proc2 = LDLabProcess.create(name = "Test Process 2", id = "#Test_Process_ID_2", objects = ResizeArray [sample2], results = ResizeArray[data1])
             let proc3 = LDLabProcess.create(name = "Test Process 3", id = "#Test_Process_ID_3", objects = ResizeArray [data1], results = ResizeArray[data2])
 
-            let sample3 = LDSample.create(name = "Test IO Node 3", id = "#Test_IO_Node_ID_3")
-            let sample4 = LDSample.create(name = "Test IO Node 4", id = "#Test_IO_Node_ID_4")
+            let sample3 = LDSample.createSample(name = "Test IO Node 3", id = "#Test_IO_Node_ID_3")
+            let sample4 = LDSample.createSample(name = "Test IO Node 4", id = "#Test_IO_Node_ID_4")
             let data3 = LDFile.create(name = "MyFile3.txt")
             let data4 = LDFile.create(name = "MyFile4.txt")
             let proc4 = LDLabProcess.create(name = "Test Process 4", id = "#Test_Process_ID_4", objects = ResizeArray [sample3], results = ResizeArray[sample4])
@@ -237,8 +237,8 @@ let getNodesOf = testList "getNodesOf" [
                 let ioData3 = graph.GetIONodeById(data3.Id)
                 let previousNodesOfData3 = ioData3.GetPreviousNodes()
                 Expect.hasLength previousNodesOfData3 2 "There should be 2 previous nodes associated with data3"
-                Expect.equal previousNodesOfData3.[0].Id sample3.Id "First previous node should be sample3"
-                Expect.equal previousNodesOfData3.[1].Id sample4.Id "Second previous node should be sample4"
+                Expect.equal previousNodesOfData3.[1].Id sample3.Id "First previous node should be sample3"
+                Expect.equal previousNodesOfData3.[0].Id sample4.Id "Second previous node should be sample4"
             testCase "GetSucceedingNodesOf data1" <| fun _ ->
                 let ioData1 = graph.GetIONodeById(data1.Id)
                 let succeedingNodesOfData1 = ioData1.GetSucceedingNodes()
@@ -257,16 +257,16 @@ let getNodesOf = testList "getNodesOf" [
         ]
         testList "MergingProcesses" [
             /// sample1 -proc1-> sample2 -proc2-> data1 -proc3-> data2
-            /// sample3 -proc4-> ""
-            let sample1 = LDSample.create(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
-            let sample2 = LDSample.create(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
+            /// sample3 -proc4-> sample2
+            let sample1 = LDSample.createSample(name = "Test IO Node 1", id = "#Test_IO_Node_ID_1")
+            let sample2 = LDSample.createSample(name = "Test IO Node 2", id = "#Test_IO_Node_ID_2")
             let data1 = LDFile.create(name = "MyFile1.txt")
             let data2 = LDFile.create(name = "MyFile2.txt")
             let proc1 = LDLabProcess.create(name = "Test Process 1", id = "#Test_Process_ID_1", objects = ResizeArray [sample1], results = ResizeArray[sample2])
             let proc2 = LDLabProcess.create(name = "Test Process 2", id = "#Test_Process_ID_2", objects = ResizeArray [sample2], results = ResizeArray[data1])
             let proc3 = LDLabProcess.create(name = "Test Process 3", id = "#Test_Process_ID_3", objects = ResizeArray [data1], results = ResizeArray[data2])
-            let sample3 = LDSample.create(name = "Test IO Node 3", id = "#Test_IO_Node_ID_3")
-            let proc4 = LDLabProcess.create(name = "Test Process 4", id = "#Test_Process_ID_4", objects = ResizeArray [sample3], results = ResizeArray[])
+            let sample3 = LDSample.createSample(name = "Test IO Node 3", id = "#Test_IO_Node_ID_3")
+            let proc4 = LDLabProcess.create(name = "Test Process 4", id = "#Test_Process_ID_4", objects = ResizeArray [sample3], results = ResizeArray[sample2])
             let dataset = LDDataset.create(name = "Test Dataset", id = "#Test_Dataset_ID", abouts = ResizeArray [proc1; proc2; proc3; proc4])
             let graph = QGraph(dataset.Flatten())
             testCase "GetNodesOf sample2" <| fun _ ->
@@ -281,9 +281,9 @@ let getNodesOf = testList "getNodesOf" [
                 let ioData2 = graph.GetIONodeById(data1.Id)
                 let previousNodesOfData1 = ioData2.GetPreviousNodes()
                 Expect.hasLength previousNodesOfData1 3 "There should be 3 previous nodes associated with data1"
-                Expect.equal previousNodesOfData1.[0].Id sample1.Id "First previous node should be sample1"
-                Expect.equal previousNodesOfData1.[1].Id sample3.Id "Second previous node should be sample3"
-                Expect.equal previousNodesOfData1.[2].Id sample2.Id "Third previous node should be sample2"
+                Expect.equal previousNodesOfData1.[0].Id sample2.Id "First previous node should be sample2"
+                Expect.equal previousNodesOfData1.[1].Id sample1.Id "Second previous node should be sample1"
+                Expect.equal previousNodesOfData1.[2].Id sample3.Id "Third previous node should be sample3"
             testCase "GetSucceedingNodesOf sample3" <| fun _ ->
                 let ioData1 = graph.GetIONodeById(sample3.Id)
                 let succeedingNodesOfSample3 = ioData1.GetSucceedingNodes()
