@@ -607,7 +607,12 @@ type QGraph(inGraph : LDGraph) as this =
 
     member this.DataContexts =
         this.Nodes
-        |> ResizeArray.filter (fun n -> LDPropertyValue.validateFragmentDescriptor(n, context))
+        |> ResizeArray.choose (fun n -> 
+            if LDPropertyValue.validateFragmentDescriptor(n, context) then
+                Some (QDataContext(n, parentGraph = this))
+            else
+                None
+            )
 
 [<AttachMembers>]
 type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this = 
@@ -981,11 +986,9 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
 [<AttachMembers>]
 type QDataContext(node : LDNode, ?parentGraph : QGraph) as this = 
     inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
-    do printfn "Creating DataContext with id %s" node.Id
     let context() = parentGraph |> Option.map (fun g -> g.Context)
     let graph() = parentGraph |> Option.map (fun g -> g :> LDGraph)
     let file = LDPropertyValue.tryGetSubjectOf(node, ?graph = graph(), ?context = context())
-    do printfn "DataContext %s has file %A" node.Id file
     let name = match file with | Some f -> Some (LDFile.getNameAsString(f, ?context = context())) | None -> None
     let _filePath,_selector  = 
         match name with
