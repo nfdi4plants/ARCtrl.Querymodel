@@ -8,6 +8,7 @@ from typing import Any
 #export { QValueCollection, IOQValueCollection } from './ts/ProcessCore/ValueCollection.js'
 #export { QPropertyValue } from './ts/ProcessCore/PropertyValue.js'
 
-from .py.ProcessCore.process_collection import QGraph, ProcessSequence, QLabProcess, QLabProtocol, IONode
+from .py.ProcessCore.process_collection import QGraph, ProcessSequence, QLabProcess, QLabProtocol, IONode, QDataContext
 from .py.ProcessCore.value_collection import QValueCollection, IOQValueCollection
 from .py.ProcessCore.property_value import QPropertyValue
+from .py.fragment_selector import CSV

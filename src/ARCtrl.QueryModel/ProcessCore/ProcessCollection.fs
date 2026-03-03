@@ -605,6 +605,10 @@ type QGraph(inGraph : LDGraph) as this =
     member this.LastData = 
         QGraph.getFinalOutputsBy ((fun (io : IONode) -> io.IsFile),this)
 
+    member this.DataContexts =
+        this.Nodes
+        |> ResizeArray.filter (fun n -> LDPropertyValue.validateFragmentDescriptor(n, context))
+
 [<AttachMembers>]
 type QLabProcess(node : LDNode, ?parentGraph : QGraph) as this = 
 
@@ -962,6 +966,10 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
         if parentGraph.IsNone then failwithf "IONode.GetSucceedingProcesses requires a parent QGraph to be set. Not set for node \"%s\"" this.Id
         QGraph.getSucceedingProcessesOf(this, graph = parentGraph.Value)
 
+    member this.DataContext =
+        LDFile.tryGetAbout(this, graph = parentGraph.Value, ?context = context())
+        |> Option.map (fun dc -> QDataContext(dc, ?parentGraph = parentGraph))
+
     override this.GetHashCode() =
         this.Id.GetHashCode()
 
@@ -969,3 +977,91 @@ type IONode(node : LDNode, ?parentGraph : QGraph) as this =
         match obj with
         | :? IONode as other -> this.Id = other.Id
         | _ -> false
+
+[<AttachMembers>]
+type QDataContext(node : LDNode, ?parentGraph : QGraph) as this = 
+    inherit LDNode(node.Id,node.SchemaType,node.AdditionalType)
+    do printfn "Creating DataContext with id %s" node.Id
+    let context() = parentGraph |> Option.map (fun g -> g.Context)
+    let graph() = parentGraph |> Option.map (fun g -> g :> LDGraph)
+    let file = LDPropertyValue.tryGetSubjectOf(node, ?graph = graph(), ?context = context())
+    do printfn "DataContext %s has file %A" node.Id file
+    let name = match file with | Some f -> Some (LDFile.getNameAsString(f, ?context = context())) | None -> None
+    let _filePath,_selector  = 
+        match name with
+        | Some n -> 
+            let p,s = DataAux.pathAndSelectorFromName n
+            Some p, s
+        | None -> None, None
+    do 
+        if LDPropertyValue.validateFragmentDescriptor(node, ?context = context()) |> not then
+            failwithf "The provided node with id %s is not a valid DataContext" node.Id
+        node.GetProperties(false)
+        |> Seq.iter (fun kv ->
+            if not (kv.Key = "Id") then
+                this.SetProperty(kv.Key, kv.Value)
+        )
+
+    member this.ParentGraph = parentGraph
+
+    member this.TryGetExplication() = 
+        let explicationName = LDPropertyValue.tryGetValueAsString(this, ?context = context())
+        let explicationID = LDPropertyValue.tryGetValueReferenceAsString(this, ?context = context())
+        ARCtrl.Conversion.BaseTypes.tryOntologyTermFromNameAndID(?name = explicationName, ?id = explicationID)
+
+    member this.TryGetObjectType() =   
+        file
+        |> Option.bind (fun f -> LDFile.tryGetPatternAsDefinedTerm(f, ?graph = graph(), ?context = context()))
+
+    member this.IsString() =
+        match this.TryGetObjectType() with
+        | Some dt ->
+            let value = LDDefinedTerm.getNameAsString(dt, ?context = context())
+            value = "string" || value = "String"
+        | None -> false
+
+    member this.IsFloat() =
+        match this.TryGetObjectType() with
+        | Some dt ->
+            let value = LDDefinedTerm.getNameAsString(dt, ?context = context())
+            value = "float" || value = "Float" || value = "double" || value = "Double"
+        | None -> false
+
+    member this.IsInt() =
+        match this.TryGetObjectType() with
+        | Some dt ->
+            let value = LDDefinedTerm.getNameAsString(dt, ?context = context())
+            value = "int" || value = "Int" || value = "integer" || value = "Integer"
+        | None -> false
+
+    member this.IsBool() =
+        match this.TryGetObjectType() with
+        | Some dt ->
+            let value = LDDefinedTerm.getNameAsString(dt, ?context = context())
+            value = "bool" || value = "Bool" || value = "boolean" || value = "Boolean"
+        | None -> false
+
+
+    member this.FilePath = _filePath
+
+    member this.Selector = _selector
+
+    /// Check if the selector of the inner DataContext is included in the selector of the outer DataContext
+    ///
+    /// E.g. outer selector "row=1-5" includes inner selector "row=3"
+    member this.IncludesOther (other : QDataContext) =
+        match this.Selector, other.Selector with
+        | Some o, Some i when o = i -> true
+        | Some o, Some i -> FragmentSelector.CSV.isIncludedString o i
+        | _ -> false
+
+
+    member this.GetAbsolutePath (basePath : string) =
+        match this.FilePath with
+        | Some fp when fp.Contains(basePath) (*System.IO.Path.IsPathRooted(fp)*) -> fp
+        | Some fp -> ARCtrl.ArcPathHelper.combine basePath fp
+        | None -> basePath
+
+    member this.ExplicationEquals (explication : OntologyAnnotation) =
+        let thisExplication = this.TryGetExplication()
+        thisExplication.IsSome && thisExplication.Value.Equals explication
