@@ -97,7 +97,8 @@ module ArcTables =
                 |> Seq.zip (t.GetInputColumn().Cells)
                 |> Seq.indexed 
                 |> Seq.choose (fun (i,(inp,out)) ->
-                    if Seq.contains inp.AsFreeText forwardNodes || (Seq.contains out.AsFreeText backwardNodes) then
+                    let name cell = match cell with | CompositeCell.FreeText n -> n | CompositeCell.Data d -> Option.defaultValue "" d.Name | _ -> ""
+                    if Seq.contains (name inp) forwardNodes || (Seq.contains (name out) backwardNodes) then
                         None
                     else Some i                              
                 )
@@ -144,7 +145,7 @@ module ArcTables =
                 |> List.collect (fun r -> 
                     [                   
                         if predicate r.InputType then QNode(r.Input, r.InputType, ps); 
-                        if predicate r.OutputType then  QNode(r.Output, r.InputType, ps)
+                        if predicate r.OutputType then  QNode(r.Output, r.OutputType, ps)
                     ])
             )
             //|> ResizeArray.distinct 

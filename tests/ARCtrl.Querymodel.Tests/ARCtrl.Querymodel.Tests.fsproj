@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ArcTables.fs" />
     <Compile Include="ProcessCore.fs" />
     <Compile Include="FragmentSelector.fs" />
     <Compile Include="TestARC.fs" />
