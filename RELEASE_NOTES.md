@@ -1,12 +1,16 @@
+### 3.0.0-alpha.4+ab13125 (Released 2026-3-4)
+* Bugfixes:
+    * [[#ab13125](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/ab13125c47834bfcdfa2dea79189dfeab6d5fc5c)] fix and test two bugs concerning data nodes
+
 ### 3.0.0-alpha.3+6d457de (Released 2026-3-3)
 * Additions:
     * [[#e43591e](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/e43591e2d9505a9e4ff6225fa6549f1cd3c576d5)] first draft of DataContext in ProcessCore
     * [[#57d3d4a](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/57d3d4a26c2c46669b0fc7066d40fc2fbe7681bc)] include PyPi and NPM package references in readme
- * Bugfixes:
+* Bugfixes:
     * [[#6d457de](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/6d457dea921eb4482709f95c3d8a63f13da64f1c)] small fixes in QDataContext
 
 ### 3.0.0-alpha.2+04582fa (Released 2025-12-23)
- * Additions:
+* Additions:
     * [[#f4bfcc1](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/f4bfcc17185ef95822e368a51fc2190dca753f40)] finish up stable version of python and javascript compatability
     * [[#567e39b](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/567e39b0f0d2b6038796bf5b02563e57be93becd)] add first bunch of process querying tests
     * [[#2a4498a](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/2a4498ab583fde82df086c07f3c95c58dc6221a4)] rework processCore by removing global graph
