@@ -3,9 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="ARCtrl"                  Version="3.0.0-beta.15" />
-    <PackageVersion Include="ARCtrl.Javascript"       Version="3.0.0-beta.15" />
-    <PackageVersion Include="ARCtrl.Python"           Version="3.0.0-beta.15" />
+    <PackageVersion Include="ARCtrl"                  Version="3.0.3" />
+    <PackageVersion Include="ARCtrl.Javascript"       Version="3.0.3" />
+    <PackageVersion Include="ARCtrl.Python"           Version="3.0.3" />
     <PackageVersion Include="FSharp.Core"             Version="[8.0.1,)" />
     <PackageVersion Include="Deedle"                  Version="3.0.0" />
     <PackageVersion Include="Fable.Package.SDK"       Version="1.1.0" />
