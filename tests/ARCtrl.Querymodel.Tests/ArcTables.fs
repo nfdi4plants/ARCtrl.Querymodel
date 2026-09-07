@@ -31,8 +31,75 @@ let subtree =
             Expect.equal t'.RowCount 1 "Subtree table should have one row"
     ]
 
+let getValues = 
+    testList "ISAValues" [
+        testCase "EmptyInputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(CompositeHeader.Input IOType.Sample)
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            t.AddColumn(CompositeHeader.Output IOType.Data, ResizeArray [CompositeCell.createDataFromString "OutputData1"; CompositeCell.createDataFromString "OutputData2"])             
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+        testCase "EmptyOutputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(CompositeHeader.Input IOType.Sample, ResizeArray [CompositeCell.FreeText "InputSample1"; CompositeCell.FreeText "InputSample2"])
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            t.AddColumn(CompositeHeader.Output IOType.Data)
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+        testCase "EmptyInputAndOutputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(CompositeHeader.Input IOType.Sample)
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            t.AddColumn(CompositeHeader.Output IOType.Data)
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+        testCase "NoInputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            t.AddColumn(CompositeHeader.Output IOType.Data, ResizeArray [CompositeCell.createDataFromString "OutputData1"; CompositeCell.createDataFromString "OutputData2"])             
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+        testCase "NoOutputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(CompositeHeader.Input IOType.Sample, ResizeArray [CompositeCell.FreeText "InputSample1"; CompositeCell.FreeText "InputSample2"])
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+        testCase "NoInputAndOutputColumn" <| fun _ ->
+            let t = ArcTable.init("MyTable")
+            let parameterHeader = CompositeHeader.Parameter (OntologyAnnotation("MyParameter"))
+            let paremeterValue = CompositeCell.createTermFromString "MyParameterValue"
+            t.AddColumn(parameterHeader, ResizeArray [paremeterValue; paremeterValue])
+            let values = t.ISAValues
+            let expectedValue = ISAValue.tryCompose parameterHeader paremeterValue |> Option.get
+            Expect.hasLength values 2 "There should be two ISAValues"
+            Expect.equal values.[0].Value expectedValue "First ISAValue should have the correct value"
+    ]
+
 
 let main = testList "ArcTables" [
     data
     subtree
+    getValues
 ]

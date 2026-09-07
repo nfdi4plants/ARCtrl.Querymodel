@@ -48,8 +48,10 @@ module ArcTables =
                 p.Rows 
                 |> Seq.collect (fun r -> 
                     [
-                        QNode(r.InputName,r.InputType,ps)
-                        QNode(r.OutputName,r.OutputType,ps)
+                        if r.InputName.IsSome then
+                            QNode(r.InputName.Value,r.InputType.Value,ps)
+                        if r.OutputName.IsSome then
+                            QNode(r.OutputName.Value,r.OutputType.Value,ps)
                     ]
                 )
             )
@@ -58,12 +60,12 @@ module ArcTables =
 
         /// Returns a new process sequence, only with those rows that contain either an educt or a product entity of the given node (or entity)
         static member getSubTreeOf (node : string) (ps : #ArcTables) =
-            let rec collectForwardNodes nodes =
+            let rec collectForwardNodes (nodes : string list) =
                 let newNodes = 
                     ps.Tables
                     |> Seq.collect (fun sheet ->
                         sheet.Rows 
-                        |> Seq.choose (fun r -> if List.contains r.InputName nodes then Some r.OutputName else None)
+                        |> Seq.choose (fun r -> if r.InputName.IsSome && List.contains r.InputName.Value nodes then r.OutputName else None)
                     )
                     |> Seq.toList
                     |> List.append nodes 
@@ -72,12 +74,12 @@ module ArcTables =
                 if newNodes = nodes then nodes
                 else collectForwardNodes newNodes
 
-            let rec collectBackwardNodes nodes =
+            let rec collectBackwardNodes (nodes : string list) =
                 let newNodes = 
                     ps.Tables
                     |> Seq.collect (fun sheet ->
                         sheet.Rows 
-                        |> Seq.choose (fun r -> if List.contains r.Output nodes then Some r.Input else None)
+                        |> Seq.choose (fun r -> if r.OutputName.IsSome && List.contains r.OutputName.Value nodes then r.InputName else None)
                     )
                     |> Seq.toList
                     |> List.append nodes 
@@ -110,8 +112,8 @@ module ArcTables =
 
         /// Returns the names of all initial inputs final outputs of the processSequence, to which no processPoints
         static member getRootInputs (ps : #ArcTables) =
-            let inputs = ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.map (fun r -> r.Input,r.InputType))
-            let outputs =  ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.map (fun r -> r.Output)) |> Set.ofSeq
+            let inputs = ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.choose (fun r -> if r.Input.IsSome then Some (r.Input.Value, r.InputType.Value) else None))
+            let outputs =  ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.choose (fun r -> r.Output)) |> Set.ofSeq
             inputs
             |> ResizeArray.choose (fun (iname,it) -> 
                 if outputs.Contains iname then
@@ -123,8 +125,8 @@ module ArcTables =
 
         /// Returns the names of all final outputs of the processSequence, which point to no further nodes
         static member getFinalOutputs (ps : #ArcTables) =
-            let inputs = ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.map (fun r -> r.Input)) |> Set.ofSeq
-            let outputs =  ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.map (fun r -> r.Output, r.OutputType))
+            let inputs = ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.choose (fun r -> r.Input)) |> Set.ofSeq
+            let outputs =  ps.Tables |> ResizeArray.collect (fun p -> p.Rows |> List.choose (fun r -> if r.Output.IsSome then Some (r.Output.Value, r.OutputType.Value) else None))
             outputs
             |> ResizeArray.choose (fun (oname,ot) -> 
                 if inputs.Contains oname then
@@ -144,8 +146,8 @@ module ArcTables =
                 p.Rows 
                 |> List.collect (fun r -> 
                     [                   
-                        if predicate r.InputType then QNode(r.Input, r.InputType, ps); 
-                        if predicate r.OutputType then  QNode(r.Output, r.OutputType, ps)
+                        if r.InputType.IsSome && predicate r.InputType.Value then QNode(r.Input.Value, r.InputType.Value, ps); 
+                        if r.OutputType.IsSome && predicate r.OutputType.Value then  QNode(r.Output.Value, r.OutputType.Value, ps)
                     ])
             )
             //|> ResizeArray.distinct 
@@ -158,7 +160,7 @@ module ArcTables =
                 ps.Tables 
                 |> ResizeArray.collect (fun p -> 
                     p.Rows 
-                    |> List.map (fun r -> QNode(r.Input,r.InputType,ps), QNode(r.Output,r.OutputType,ps))
+                    |> List.choose (fun r -> if r.Input.IsSome && r.Output.IsSome then Some (QNode(r.Input.Value,r.InputType.Value,ps), QNode(r.Output.Value,r.OutputType.Value,ps)) else None)
                     |> List.distinct
                 ) 
                 |> Seq.toList
@@ -185,7 +187,7 @@ module ArcTables =
                 ps.Tables 
                 |> ResizeArray.collect (fun p -> 
                     p.Rows 
-                    |> List.map (fun r -> QNode(r.Output,r.OutputType,ps), QNode(r.Input,r.InputType,ps))
+                    |> List.choose (fun r -> if r.Output.IsSome && r.Input.IsSome then Some (QNode(r.Output.Value,r.OutputType.Value,ps), QNode(r.Input.Value,r.InputType.Value,ps)) else None)
                     |> List.distinct
                 ) 
                 |> Seq.toList
@@ -209,12 +211,12 @@ module ArcTables =
 
         static member getPreviousNodesBy (node : string) (ps : #ArcTables) =
 
-            let rec collectBackwardNodes nodes =
+            let rec collectBackwardNodes (nodes : string list) =
                 let newNodes = 
                     ps.Tables
                     |> Seq.collect (fun sheet ->
                         sheet.Rows 
-                        |> Seq.choose (fun r -> if List.contains r.Output nodes then Some r.Input else None)
+                        |> Seq.choose (fun r -> if r.Output.IsSome && List.contains r.Output.Value nodes then r.Input else None)
                     )
                     |> Seq.toList
                     |> List.append nodes 
@@ -226,12 +228,12 @@ module ArcTables =
             collectBackwardNodes [node]
 
         static member getSucceedingNodesBy (node : string) (ps : #ArcTables) =
-            let rec collectForwardNodes nodes =
+            let rec collectForwardNodes (nodes : string list) =
                 let newNodes = 
                     ps.Tables
                     |> Seq.collect (fun sheet ->
                         sheet.Rows 
-                        |> Seq.choose (fun r -> if List.contains r.InputName nodes then Some r.OutputName else None)
+                        |> Seq.choose (fun r -> if r.Input.IsSome && List.contains r.Input.Value nodes then r.Output else None)
                     )
                     |> Seq.toList
                     |> List.append nodes 
@@ -262,11 +264,12 @@ module ArcTables =
                 ps.Tables 
                 |> ResizeArray.collect (fun p -> 
                     p.Rows 
-                    |> List.groupBy (fun r -> r.Output)
+                    |> List.choose (fun r -> if r.Output.IsSome then Some r else None)
+                    |> List.groupBy (fun r -> r.Output.Value)
                     //|> List.map (fun (o,rs) -> o, rs |> List.map snd)
                 ) 
                 |> Map.ofSeq
-            let rec loop values lastState state = 
+            let rec loop values (lastState : string list) (state : string list) = 
                 if lastState = state then values 
                 else
                     let newState,newValues = 
@@ -275,7 +278,7 @@ module ArcTables =
                             mappings.TryFind s 
                             |> Option.map (fun rs -> 
                                 rs 
-                                |> List.map (fun r -> r.Input,r.Values |> Seq.toList)
+                                |> List.choose (fun r -> if r.Input.IsSome then Some (r.Input.Value,r.Values |> Seq.toList) else None)
                                 |> List.unzip
                                 |> fun (s,vs) -> s, vs |> List.concat
                             )                            
@@ -293,11 +296,12 @@ module ArcTables =
                 ps.Tables 
                 |> ResizeArray.collect (fun p -> 
                     p.Rows 
-                    |> List.groupBy (fun r -> r.Input)
+                    |> List.choose (fun r -> if r.Input.IsSome then Some r else None)
+                    |> List.groupBy (fun r -> r.Input.Value)
                 ) 
 
                 |> Map.ofSeq
-            let rec loop values lastState state = 
+            let rec loop values (lastState : string list) (state : string list) = 
                 if lastState = state then values 
                 else
                     let newState,newValues = 
@@ -306,7 +310,7 @@ module ArcTables =
                             mappings.TryFind s 
                             |> Option.map (fun rs -> 
                                 rs 
-                                |> List.map (fun r -> r.Output,r.Values |> Seq.toList)
+                                |> List.choose (fun r -> r.Output.IsSome |> fun b -> if b then Some (r.Output.Value,r.Values |> Seq.toList) else None)
                                 |> List.unzip
                                 |> fun (s,vs) -> s, vs |> List.concat
                             )                            

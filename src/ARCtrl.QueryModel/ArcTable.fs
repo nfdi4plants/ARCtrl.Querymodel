@@ -128,42 +128,42 @@ module ArcTableExtensions =
 
         member this.Cells = vals
 
-        static member input (row : CRow) = 
+        static member tryInput (row : CRow) = 
             row.Cells
-            |> Seq.pick (fun (header,cell) -> if header.isInput then Some cell else None)
+            |> Seq.tryPick (fun (header,cell) -> if header.isInput then Some cell else None)
 
-        static member output (row : CRow) =
+        static member tryOutput (row : CRow) =
             row.Cells
-            |> Seq.pick (fun (header,cell) -> if header.isOutput then Some cell else None)
+            |> Seq.tryPick (fun (header,cell) -> if header.isOutput then Some cell else None)
 
-        static member inputName (row : CRow) =
+        static member tryInputName (row : CRow) =
             row.Cells
-            |> Seq.pick (fun (header,cell) -> if header.isInput then cell.GetContent().[0] |> Some else None)
+            |> Seq.tryPick (fun (header,cell) -> if header.isInput then cell.GetContent().[0] |> Some else None)
 
-        static member outputName (row : CRow) =
+        static member tryOutputName (row : CRow) =
             row.Cells
-            |> Seq.pick (fun (header,cell) -> if header.isOutput then cell.GetContent().[0] |> Some else None)
+            |> Seq.tryPick (fun (header,cell) -> if header.isOutput then cell.GetContent().[0] |> Some else None)
 
-        static member inputType (row : CRow)  =
+        static member tryInputType (row : CRow)  =
             row.Cells
-            |> Seq.pick (fun (header,_) -> header.TryInput())
+            |> Seq.tryPick (fun (header,_) -> header.TryInput())
 
-        static member outputType (row : CRow) =
+        static member tryOutputType (row : CRow) =
             row.Cells
-            |> Seq.pick (fun (header,_) -> header.TryOutput())
+            |> Seq.tryPick (fun (header,_) -> header.TryOutput())
             
 
-        member this.InputName = CRow.inputName this
+        member this.InputName = CRow.tryInputName this
 
-        member this.OutputName = CRow.outputName this
+        member this.OutputName = CRow.tryOutputName this
 
         member this.Input = this.InputName
 
         member this.Output = this.OutputName
 
-        member this.InputType = CRow.inputType this
+        member this.InputType = CRow.tryInputType this
 
-        member this.OutputType = CRow.outputType this
+        member this.OutputType = CRow.tryOutputType this
 
         member this.Values = 
             this.Cells
@@ -187,8 +187,8 @@ module ArcTableExtensions =
         member this.ISAValues =          
             this.Rows
             |> Seq.collect (fun r -> 
-                let i = r.InputName
-                let o = r.OutputName
+                let i = r.InputName |> Option.defaultValue ""
+                let o = r.OutputName |> Option.defaultValue ""
                 r.Cells
                 |> Seq.choose (fun (header,cell) ->
                     ISAValue.tryCompose header cell
@@ -227,7 +227,10 @@ module ArcTableExtensions =
         member this.Item (input : string) =
             let row = 
                 this.Rows 
-                |> List.tryFind (CRow.inputName >> (=) input)
+                |> List.tryFind (fun i ->            
+                    match CRow.tryInputName i with
+                    | Some name -> name = input
+                    | None -> false)
             match row with
             | Some r -> r
             | None -> failwith $"Sheet \"{this.Name}\" does not contain row with input \"{input}\""
@@ -238,18 +241,18 @@ module ArcTableExtensions =
 
         member this.InputNames =
             this.Rows 
-            |> List.map CRow.inputName
+            |> List.map CRow.tryInputName
 
         member this.OutputNames =
             this.Rows 
-            |> List.map CRow.outputName
+            |> List.map CRow.tryOutputName
     
         member this.Inputs =
             this.Rows 
-            |> List.map (fun row -> CRow.inputName row, CRow.inputType row)
+            |> List.map (fun row -> CRow.tryInputName row, CRow.tryInputType row)
 
         member this.Outputs =
             this.Rows 
-            |> List.map (fun row -> CRow.outputName row, CRow.outputType row)
+            |> List.map (fun row -> CRow.tryOutputName row, CRow.tryOutputType row)
 
    
