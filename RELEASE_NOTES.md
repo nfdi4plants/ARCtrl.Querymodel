@@ -1,3 +1,7 @@
+### 3.0.0-alpha.5+09cf15a (Released 2026-9-7)
+* Bugfixes:
+    * [[#09cf15a](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/09cf15ac0535e2d0bab8fd9b064627722a4d7669)] add tests and fix #32
+
 ### 3.0.0-alpha.4+ab13125 (Released 2026-3-4)
 * Bugfixes:
     * [[#ab13125](https://github.com/nfdi4plants/ARCtrl.Querymodel/commit/ab13125c47834bfcdfa2dea79189dfeab6d5fc5c)] fix and test two bugs concerning data nodes
